@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/bash 
 
 #************************************************************************
 # QBAS
-# version 0.9
+# version 0.9.3
 # Copyright (c) 2003-2004 Gianluca Romanin ( J_Zar )
 #        <jayorama@users.sourceforge.net>
 #************************************************************************
@@ -58,14 +58,39 @@ then
 		rm -f proj_temp ;
 	fi
 fi
+# retrieve project path 
+# KNOWN BUG: If user executes the script environment not in the src
+# dir, then script system will surely fail!
+PROJECT_PATH=$PWD ;	
 
-echo "Project file is:      $PROJECT_FILE"
+
+
+echo "Project file is:      $PROJECT_FILE" ;
+#echo "Project path is:      $PROJECT_PATH" ;
 
 # cleanup phase
 rm -f configure.def ;
+rm -f summary.log ;
+rm -f config.h ;
+
+# save project path variable
+echo "PROJECT_PATH = $PROJECT_PATH" >> configure.def ;
 
 # number of arguments + 1
 NUM_OPT=$(($# + 1));
+
+# if we have arguments, we update the user friendly output...
+if [ "$NUM_OPT" != "1" ] ;
+then 
+	echo "CUSTOM_BUILD = true" >> configure.def
+fi
+
+# retrieve the project type: Qt or not Qt?
+TMP=$(cat build.definition | grep "no_qt" -0 -w) ;
+if [ "$TMP" = "" ];
+then
+	QT_PROJECT=1 ;
+fi
 
 # parsing arguments
 for (( d=1; d<$NUM_OPT; d++ )); do
@@ -89,8 +114,9 @@ for (( d=1; d<$NUM_OPT; d++ )); do
 				break
 			fi
 			T=$V ;
-			echo "QMAKE_CFLAGS += $V" >> configure.def
+			echo "QMAKE_CFLAGS = $V" >> configure.def
 		done
+		STATUS="ok"
 	fi
 
 	if [ "$OPT" = "--cxxflags" ];
@@ -105,8 +131,9 @@ for (( d=1; d<$NUM_OPT; d++ )); do
 				break
 			fi
 			T=$V ;
-			echo "QMAKE_CXXFLAGS += $V" >> configure.def
+			echo "QMAKE_CXXFLAGS = $V" >> configure.def
 		done
+		STATUS="ok"
 	fi
 
 	if [ "$OPT" = "--lflags" ];
@@ -121,8 +148,9 @@ for (( d=1; d<$NUM_OPT; d++ )); do
 				break
 			fi
 			T=$V ;
-			echo "QMAKE_LFLAGS += $V" >> configure.def
+			echo "QMAKE_LFLAGS = $V" >> configure.def
 		done
+		STATUS="ok"
 	fi
 
 	if [ "$OPT" = "--includedir" ];
@@ -139,23 +167,75 @@ for (( d=1; d<$NUM_OPT; d++ )); do
 			T=$V ;
 			echo "PATH$y = $V" >> configure.def
 		done
+		STATUS="ok"
 	fi
 
 
 	if [ "$OPT" = "--prefix" ];
 	then
 		echo "PREFIX = $VAL" >> configure.def
+		STATUS="ok"
 	fi
 
 	if [ "$OPT" = "--static-linking-path" ];
 	then
 		echo "STATIC_LIBPATH = $VAL" >> configure.def
+		STATUS="ok"
 	fi
 
 	if [ "$OPT" = "--enable-debug" ];
 	then
 		echo "CONFIG += debug" >> configure.def
+		STATUS="ok"
 	fi
+	
+	if echo $OPT | grep -q -e "--enable-" ;
+	then
+		V=$(echo $OPT | cut -f4 -d"-") ;
+		echo "ENABLED_FEATURES += $V" >> configure.def
+		STATUS="ok"
+	fi
+	
+	if echo $OPT | grep -q -e "--disable-" ;
+	then
+		V=$(echo $OPT | cut -f4 -d"-") ;
+		echo "DISABLED_FEATURES += $V" >> configure.def
+		STATUS="ok"
+	fi
+	
+# 	if [ "$OPT" = "--enable-features" ];
+# 	then
+# 		T=""
+# 		for (( y=1; y<6; y++ )); do
+# 			# parse option value to find different subvalues
+# 			V=$(echo $VAL | cut -f$y -d";") ;
+# 			# checking to avoid duplicates or if we have finished
+# 			if [ "$V" = "" ] || [ "$V" = "$T" ] ;
+# 			then
+# 				break
+# 			fi
+# 			T=$V ;
+# 			echo "ENABLED_FEATURES += $V" >> configure.def
+# 		done
+# 		STATUS="ok"
+# 	fi
+	
+# 	if [ "$OPT" = "--disable-features" ];
+# 	then
+# 		T=""
+# 		for (( y=1; y<6; y++ )); do
+# 			# parse option value to find different subvalues
+# 			V=$(echo $VAL | cut -f$y -d";") ;
+# 			# checking to avoid duplicates or if we have finished
+# 			if [ "$V" = "" ] || [ "$V" = "$T" ] ;
+# 			then
+# 				break
+# 			fi
+# 			T=$V ;
+# 			echo "DISABLED_FEATURES += $V" >> configure.def
+# 		done
+# 		STATUS="ok"
+# 	fi
 
 	if [ "$OPT" = "--includelib" ];
 	then
@@ -171,15 +251,29 @@ for (( d=1; d<$NUM_OPT; d++ )); do
 			T=$V ;
 			echo "LIBS += $V" >> configure.def
 		done
+		STATUS="ok"
+	fi
+	
+	# if we have not parsed a valid argument
+	# we score an error...
+	if [ "$STATUS" = "ok" ];
+	then
+		STATUS="error"
+	else
+		echo
+		echo "__ Wrong parameter!"
+		echo "__ If unsure, type './configure --help'"
+		echo 
+		exit
 	fi
 done
 
 
-
+# rolling to go with qmake...
 
 ######################### QT Env variables checking
 #
-if  export | grep "$QTDIR" -q ;
+if  export | grep "QTDIR" -q ;
 then
 	RES="yes"
 else
@@ -197,14 +291,25 @@ then
 	exit
 fi
 
+## section init: if qt project
+if [ "$QT_PROJECT" = "1" ] ;
+then
 
 ######################### Qt headers ---> qglobal.h
 #
 if test -f $QTDIR/include/qglobal.h ;
 then
+	QT_GLOBAL_HEADER="$QTDIR/include/qglobal.h" ;
 	RES="yes"
 else
-	RES="no"
+	find /usr -name qglobal.h 1> temp ;
+	QT_GLOBAL_HEADER=$(cat temp) ;
+	if [ "$QT_GLOBAL_HEADER" != "" ]
+	then
+		RES="yes"
+	else
+		RES="no"
+	fi
 fi
 
 echo Checking for Qt headers    ........    $RES
@@ -219,6 +324,7 @@ then
 fi
 
 
+
 ######################### QT Version >= $QT_MINIMUM_REQUIRED_VERSION (if it is set)
 #
 
@@ -227,7 +333,7 @@ QT_MINIMUM_REQUIRED_VERSION_STR=$(cat build.definition | grep "QT_MINIMUM_REQUIR
 
 if [ "$QT_MINIMUM_REQUIRED_VERSION" != "" ] && [ "$QT_MINIMUM_REQUIRED_VERSION_STR" != "" ];
 then
-	cat $QTDIR/include/qglobal.h | grep "QT_VERSION" -0 > temp ; 
+	cat $QT_GLOBAL_HEADER | grep "QT_VERSION" -0 > temp ; 
 	QVERSION=$(cat temp | grep "#define QT_VERSION" -0 -w | cut -f3 -d" " | cut -f2 -d"x") ;
 	QVERSION_STR=$(cat temp | grep "QT_VERSION_STR" -0 -w | cut -f2 -d'"') ;
 
@@ -251,63 +357,150 @@ then
 fi
 
 
+
+######################### QT library is thread type?
+#
+if test -e $QTDIR/lib/libqt-mt.so ;
+then
+	QT_LIB="$QTDIR/lib" ;
+	RES="yes"
+	echo "CONFIG += thread" >> configure.def ;
+else
+	find /usr -name libqt-mt.so 1> temp ;
+	QT_LIB=$(cat temp) ;
+	if [ "$QT_LIB" != "" ]
+	then
+		RES="yes"
+		echo "CONFIG += thread" >> configure.def ;
+		
+		echo
+		echo "__ Qt lib not in the expected path!"
+		echo
+		
+		CRITICAL="1" ;
+	else
+		RES="no"
+	fi
+fi
+
+echo Checking if Qt is -mt    ........    $RES 
+
+fi # end if !no_qt
+
+
 ######################### qmake, uic, moc checking
 #
 if test -e $QTDIR/bin/qmake ;
 then
+	QT_QMAKE_EXEC="$QTDIR/bin/qmake" ;
 	RES="yes"
 else
-	RES="no"
+	find /usr -name qmake 1> temp ;
+	QT_QMAKE_EXEC=$(cat temp) ;
+	if [ "$QT_QMAKE_EXEC" != "" ]
+	then
+		RES="yes"
+		echo
+		echo "__ qmake not in the expected path!"
+		echo
+		
+		CRITICAL="1" ;
+	else
+		RES="no"
+	fi
 fi
 
-echo Checking for qmake    ........    $RES
+echo Checking for qmake    ........    $RES , $QT_QMAKE_EXEC
 
 if test "$RES" = "no" ;
 then
 	echo
-	echo "__ I can't locate qmake. Just tried: $QTDIR/bin/qmake"
+	echo "__ I can't locate qmake."
 	exit
 fi
 
+## section init: if qt project
+if [ "$QT_PROJECT" = "1" ] ;
+then
+
 if test -e $QTDIR/bin/uic ;
 then
+	QT_UIC_EXEC="$QTDIR/bin/uic" ;
 	RES="yes"
 else
-	RES="no"
+	find /usr -name uic 1> temp ;
+	QT_UIC_EXEC=$(cat temp) ;
+	if [ "$QT_UIC_EXEC" != "" ]
+	then
+		RES="yes"
+		echo
+		echo "__ uic not in the expected path!"
+		echo
+		
+		CRITICAL="1" ;
+	else
+		RES="no"
+	fi
 fi
 
-echo Checking for uic    ........    $RES
+echo Checking for uic    ........    $RES , $QT_UIC_EXEC 
 
 if test "$RES" = "no" ;
 then
 	echo
-	echo "__ I can't locate uic. Just tried: $QTDIR/bin/uic"
+	echo "__ I can't locate uic."
 	exit
 fi
 
 if test -e $QTDIR/bin/moc ;
 then
+	QT_MOC_EXEC="$QTDIR/bin/moc" ;
 	RES="yes"
 else
-	RES="no"
+	find /usr -name moc 1> temp ;
+	QT_MOC_EXEC=$(cat temp) ;
+	if [ "$QT_MOC_EXEC" != "" ]
+	then
+		RES="yes"
+		echo
+		echo "__ moc not in the expected path!"
+		echo
+		
+		CRITICAL="1" ;
+	else
+		RES="no"
+	fi
 fi
 
-echo Checking for moc    ........    $RES
+echo Checking for moc    ........    $RES , $QT_MOC_EXEC
 
 if test "$RES" = "no" ;
 then
 	echo
-	echo "__ I can't locate moc. Just tried: $QTDIR/bin/moc"
+	echo "__ I can't locate moc."
 	exit
 fi
 
+fi # end if !no_qt
 
 
+
+
+if [ "$CRITICAL" = "1" ] ;
+then 
+	echo
+	echo "__ Critical exceptions occurred."
+	echo "__ Check errors above if something goes wrong..."
+	echo 
+fi
+
+#cleanup
+rm -f temp ;
 
 
 echo "-------------------------------------------"
 echo    Now going with qmake...
 echo "-------------------------------------------"
 
-$QTDIR/bin/qmake $PROJECT_FILE
+$QT_QMAKE_EXEC $PROJECT_FILE
 

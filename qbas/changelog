@@ -2,6 +2,20 @@
 
 
 		----->>>   CHANGELOG   <<<-----
+		
+Version 0.9.4 -----------------------------------
+-------------------------------------------------
+( 28-05-2004 )
+
+0)-  Fixed a little output bug in 'check.qbas': when a certain
+     FEATURE was defined more than one time, summary reported 
+     more time the same line;
+     
+0)+  More code to "configure" script: help messages will show
+     custom options now;
+     
+    
+
 
 Version 0.9.3 -----------------------------------
 -------------------------------------------------
@@ -11,7 +25,8 @@ Version 0.9.3 -----------------------------------
      in build.definition and using 'config.h.in' as code base;
      
 0)+  PROJECT_SETTINGS can handle option 'no_qt': support for 
-     projects which not use Qt libs;
+     projects which not use Qt libs ( not working completely
+     although ;-( );
 
 
 

@@ -1,7 +1,7 @@
 
 #************************************************************************
 # QBAS
-# version 0.9
+# version 0.9.3
 # Copyright (c) 2003-2004 Gianluca Romanin ( J_Zar )
 #        <jayorama@users.sourceforge.net>
 #************************************************************************
@@ -32,6 +32,55 @@
 # -------------------------------------------------------------------------
 # -------------------------------------------------------------------------
 FOUND = false
+# by default we suppose not to have features and DO_ACTIONS
+# is always true...
+DO_ACTIONS = true
+# --------------------------------------
+# Generic init step (only once)... 
+# --------------------------------------
+contains( INIT, true ) {
+	# init the summary output...
+	contains( PROJECT_SETTINGS , enable_summary ) {
+		system( echo " " >> summary.log )
+		system( echo "	---------- Features Summary ----------" >> summary.log )
+		system( echo " " >> summary.log )
+		}
+	# init config.h if required...
+	# We allow a prototype called 'config.h.in' to be then
+	# modified by our code.
+	contains( PROJECT_SETTINGS , enable_config_h ) {
+		DEFINES += HAVE_CONFIG_H
+		exists( config.h.in ) {
+			!system( cp -f config.h.in config.h ) {
+				error( "Internal error renaming config.h!" )
+				}
+			}
+		system( echo " " >> config.h )
+		system( echo "/** This file is automatically created by QBAS" >> config.h )
+		system( echo " *  Pay attention: changes are unsafe!" >> config.h )
+		system( echo " */" >> config.h )
+		system( echo " " >> config.h )
+		system( echo "$${DEF_CHAR}define	LINUX	1" >> config.h )
+		system( echo " " >> config.h )
+		}
+	# init all template messages...
+	# warning for static linking
+	!isEmpty( STATIC_TEMPLATE_MESSAGE ) {
+		STATIC_MESSAGE = "$${STATIC_TEMPLATE_MESSAGE}"
+		}
+		else {
+		STATIC_MESSAGE = , statically linked
+		}
+	# warning for skipped link
+	!isEmpty( SKIP_LINK_TEMPLATE_MESSAGE ) {
+		SKIP_LINK_MESSAGE = "$${SKIP_LINK_TEMPLATE_MESSAGE}"
+		}
+		else {
+		SKIP_LINK_MESSAGE = , skipped
+		}
+	# all done: no more through this step!
+	INIT = false
+	}
 # --------------------------------------
 # At first: check for errors in definition... 
 # --------------------------------------
@@ -51,10 +100,10 @@ isEmpty( TYPE ) {
 # if DESCRIPTION is not empty we use it to set the output message... 
 # --------------------------------------
 !isEmpty( DESCRIPTION ) {
-	MESSAGE = "Checking for $${DESCRIPTION} ...............
+	MESSAGE = Checking for $${DESCRIPTION} ...............
 	}
 	else {
-	MESSAGE = "Checking for $${OBJECT} ...............
+	MESSAGE = Checking for $${OBJECT} ...............
 	}
 # --------------------------------------
 # if ERROR_TEMPLATE_MESSAGE is not empty we use it to set the 
@@ -66,6 +115,49 @@ isEmpty( TYPE ) {
 	else {
 	ERROR_MESSAGE = "Cannot compile without $${OBJECT}!"
 	}
+# --------------------------------------
+# if FEATURE is set we check if it is enabled... 
+# --------------------------------------
+!isEmpty( FEATURE ) {
+	contains( OPTIONS, lock_feature ) {
+		# if feature is locked by the developer
+		# then we skip user directives...
+		contains( OPTIONS, disable_feature ) {
+			# we avoid to link libraries if disabled
+			# Finally there is no reason to exit on failure
+			OPTIONS += skip_link
+			OPTIONS -= exit_on_failure
+			DO_ACTIONS = false
+			}
+		# by default FEATURE is >>> ENABLED <<< !
+		} else {
+		# this is the user time: if he disabled the feature
+		# we set the environment on conseguence...
+		contains( DISABLED_FEATURES, $${FEATURE} ) {
+			# we avoid to link libraries if disabled
+			# Finally there is no reason to exit on failure
+			OPTIONS += skip_link
+			OPTIONS -= exit_on_failure
+			DO_ACTIONS = false
+		}
+		# this is the user time: if he enabled the feature
+		# we set the environment on conseguence...
+		# Although code is provided for convenience...
+		contains( ENABLED_FEATURES, $${FEATURE} ) {
+			DO_ACTIONS = true
+		} else {
+			# if nothing is set, looking at developer's will...
+			contains( OPTIONS, disable_feature ) {
+				# we avoid to link libraries if disabled
+				# Finally there is no reason to exit on failure
+				OPTIONS += skip_link
+				OPTIONS -= exit_on_failure
+				DO_ACTIONS = false
+			}
+		}
+		}
+	}
+
 
 
 # --------------------------- lib type ------------------------------------
@@ -83,11 +175,7 @@ contains( OPTIONS, marked_static ) {
 	!isEmpty( STATIC_LIBPATH ) {
 		!contains( OPTIONS, skip_link ) {
 			LIBS += $${STATIC_LIBPATH}/$${OBJECT}
-			MESSAGE += yes , statically linked"
-			} else {
-				MESSAGE += yes"
-				}
-		message( $${MESSAGE} )
+			}
 		FOUND = true
 	}
 }
@@ -100,10 +188,8 @@ contains( FOUND, false) {
 # --------------------------------------
 !isEmpty( LINK_LIBS ) {
 	system( ld $${LINK_LIBS} 2>/dev/null ) {
-		MESSAGE += yes"
-		message( $${MESSAGE} )
 		FOUND = true
-	}
+		}
 }
 
 # --------------------------- lib existance check -------------------------
@@ -112,32 +198,20 @@ contains( FOUND, false) {
 	exists( $${LIB_BASE0}/$${OBJECT} ) {
 		!contains( OPTIONS, skip_link ) {
 			LIBS += $${LIB_BASE0}/$${OBJECT}
-			MESSAGE += yes , statically linked"
-			} else {
-				MESSAGE += yes"
-				}
-		message( $${MESSAGE} )
+			} 
 		FOUND = true
 	} else {
 		exists( $${LIB_BASE1}/$${OBJECT} ) {
 			!contains( OPTIONS, skip_link ) {
 				LIBS += $${LIB_BASE1}/$${OBJECT}
-				MESSAGE += yes , statically linked"
-				} else {
-					MESSAGE += yes"
-					}
-			message( $${MESSAGE} )
+				} 
 			FOUND = true
 		}
 		} else {
 			exists( $${LIB_BASE2}/$${OBJECT} ) {
 				!contains( OPTIONS, skip_link ) {
 					LIBS += $${LIB_BASE2}/$${OBJECT}
-					MESSAGE += yes , statically linked"
-					} else {
-						MESSAGE += yes"
-						}
-				message( $${MESSAGE} )
+					} 
 				FOUND = true
 			}
 		}
@@ -147,23 +221,21 @@ contains( FOUND, false) {
 IS_LIB = false
 }
 
+
 # --------------------------- bin type ------------------------------------
 # -------------------------------------------------------------------------
 # -------------------------------------------------------------------------
 contains( TYPE, bin ) {
 # if we have a binary
 exists( $${BIN_BASE0}/$${OBJECT} ) {
-	MESSAGE += yes"
-	message( $${MESSAGE} )
 	FOUND = true
-} else {
-	exists( $${BIN_BASE1}/$${OBJECT} ) {
-		MESSAGE += yes"
-		message( $${MESSAGE} )
-		FOUND = true
-	}
+	} else {
+		exists( $${BIN_BASE1}/$${OBJECT} ) {
+			FOUND = true
+			}
+		}
 }
-}
+
 
 # --------------------------- header type ---------------------------------
 # -------------------------------------------------------------------------
@@ -171,17 +243,14 @@ exists( $${BIN_BASE0}/$${OBJECT} ) {
 contains( TYPE, header ) {
 # if we have header
 exists( $${HEADER_BASE0}/$${OBJECT} ) {
-	MESSAGE += yes"
-	message( $${MESSAGE} )
 	FOUND = true
-} else {
-	exists( $${HEADER_BASE1}/$${OBJECT} ) {
-		MESSAGE += yes"
-		message( $${MESSAGE} )
-		FOUND = true
-	}
+	} else {
+		exists( $${HEADER_BASE1}/$${OBJECT} ) {
+			FOUND = true
+			}
+		}
 }
-}
+
 
 # --------------------------- command type --------------------------------
 # -------------------------------------------------------------------------
@@ -189,13 +258,12 @@ exists( $${HEADER_BASE0}/$${OBJECT} ) {
 contains( TYPE, command ) {
 # if we have command
 system( $${OBJECT} ) {
-	MESSAGE += yes"
-	message( $${MESSAGE} )
 	FOUND = true
 } else {
 	ERROR_MESSAGE = "Command "$${OBJECT}" scores an error!"
 }
 }
+
 
 # --------------------------- other type ----------------------------------
 # -------------------------------------------------------------------------
@@ -203,22 +271,16 @@ system( $${OBJECT} ) {
 contains( TYPE, other ) {
 # if we have other stuff
 exists( $${OPTIONAL_BASE0}/$${OBJECT} ) {
-	MESSAGE += yes"
-	message( $${MESSAGE} )
 	FOUND = true
-} else {
-	exists( $${OPTIONAL_BASE1}/$${OBJECT} ) {
-		MESSAGE += yes"
-		message( $${MESSAGE} )
-		FOUND = true
 	} else {
-			exists( $${OPTIONAL_BASE2}/$${OBJECT} ) {
-				MESSAGE += yes"
-				message( $${MESSAGE} )
-				FOUND = true
-			}
+		exists( $${OPTIONAL_BASE1}/$${OBJECT} ) {
+			FOUND = true
+			} else {
+				exists( $${OPTIONAL_BASE2}/$${OBJECT} ) {
+					FOUND = true
+					}
+				}
 		}
-}
 }
 
 # --------------------------- not found but... ----------------------------
@@ -229,77 +291,85 @@ exists( $${OPTIONAL_BASE0}/$${OBJECT} ) {
 contains( FOUND, false) {
 		!isEmpty( PATH1 ) {
 			exists( $$PATH1/$${OBJECT} ){
-			MESSAGE += yes"
 			contains( IS_LIB, true) {
 				!contains( OPTIONS, skip_link ) {
 					LIBS += $$PATH1/$${OBJECT}
-					MESSAGE += , statically linked"
 					}
 			}
-			message( $${MESSAGE} )
 			FOUND = true
 			}
 		}
 		!isEmpty( PATH2 ) {
 			exists( $$PATH2/$${OBJECT} ){
-			MESSAGE += yes"
 			contains( IS_LIB, true) {
 				!contains( OPTIONS, skip_link ) {
 					LIBS += $$PATH2/$${OBJECT}
-					MESSAGE += , statically linked"
 					}
 			}
-			message( $${MESSAGE} )
 			FOUND = true
 			}
 		}
 		!isEmpty( PATH3 ) {
 			exists( $$PATH3/$${OBJECT} ){
-			MESSAGE += yes"
 			contains( IS_LIB, true) {
 				!contains( OPTIONS, skip_link ) {
 					LIBS += $$PATH3/$${OBJECT}
-					MESSAGE += , statically linked"
 					}
 			}
-			message( $${MESSAGE} )
 			FOUND = true
 			}
 		}
 		!isEmpty( PATH4 ) {
 			exists( $$PATH4/$${OBJECT} ){
-			MESSAGE += yes"
 			contains( IS_LIB, true) {
 				!contains( OPTIONS, skip_link ) {
 					LIBS += $$PATH4/$${OBJECT}
-					MESSAGE += , statically linked"
 					}
 			}
-			message( $${MESSAGE} )
 			FOUND = true
 			}
 		}
 		!isEmpty( PATH5 ) {
 			exists( $$PATH5/$${OBJECT} ){
-			MESSAGE += yes"
 			contains( IS_LIB, true) {
 				!contains( OPTIONS, skip_link ) {
 					LIBS += $$PATH5/$${OBJECT}
-					MESSAGE += , statically linked"
 					}
 			}
-			message( $${MESSAGE} )
 			FOUND = true
 			}
 		}
 }
+
+
+# --------------------------- create output message -----------------------
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# We create the right output message for each situation...
+contains( FOUND, true) {
+	MESSAGE += yes
+#	contains( IS_LIB, true) {
+		contains( OPTIONS, skip_link ) {
+			MESSAGE += $${SKIP_LINK_MESSAGE}
+			}
+			else {
+				VAR = $$find( LIBS, $${OBJECT} )
+				!isEmpty( VAR ) {
+					MESSAGE += $${STATIC_MESSAGE}
+					}
+				}
+#		}
+	message( $${MESSAGE} )
+}
+
 
 # --------------------------- definitely not found ------------------------
 # -------------------------------------------------------------------------
 # -------------------------------------------------------------------------
 # Not found again? Nothing to do...
 contains( FOUND, false) {
-	MESSAGE += no"
+	MESSAGE += no
+	SUMMARY_MESSAGE = no
 	message( $${MESSAGE} )
 	!isEmpty( TIP_MESSAGE ) {
 		message( "**************************************" )
@@ -319,15 +389,45 @@ contains( FOUND, false) {
 # if found:
 # Add something
 contains( FOUND, true ) {
-	!contains( OPTIONS, skip_link ) {
-		!contains( MESSAGE, statically ) {
-			LIBS += $${LINK_LIBS}
+	contains( DO_ACTIONS , true ) {
+		!contains( OPTIONS, skip_link ) {
+			!contains( MESSAGE, statically ) {
+				LIBS += $${LINK_LIBS}
+				}
 			}
+		DEFINES += $${ADD_DEFINES}
+		SOURCES += $${ADD_SOURCES}
+		HEADERS += $${ADD_HEADERS}
+		CONFIG += $${ADD_CONFIG}
+		SUMMARY_MESSAGE = yes
+	} else {
+		SUMMARY_MESSAGE = no
+	}
+}
+
+# --------------------------- summary output ------------------------------
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+!isEmpty( FEATURE ) {
+	contains( OPTIONS, lock_feature ) {
+	SUMMARY_MESSAGE += 	(locked)
+	}
+	contains( PROJECT_SETTINGS , enable_summary ) {
+			system( echo "	$${FEATURE}	==>	$${SUMMARY_MESSAGE}" >> summary.log )
 		}
-	DEFINES += $${ADD_DEFINES}
-	SOURCES += $${ADD_SOURCES}
-	HEADERS += $${ADD_HEADERS}
-	CONFIG += $${ADD_CONFIG}
+}
+
+
+# --------------------------- create config.h -----------------------------
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# For feature compatibility we do what autoheader does...
+contains( FOUND, true) {
+	!isEmpty( CONFIG_HEADER_DEFINE ) {
+		system( echo " " >> config.h )
+		system( echo "$${DEF_CHAR}define	$${CONFIG_HEADER_DEFINE}	1" >> config.h )
+		system( echo " " >> config.h )
+		}
 }
 
 
@@ -340,6 +440,8 @@ contains( FOUND, true ) {
 # TYPE =
 # --------------------------------------
 DESCRIPTION =
+FEATURE =
+CONFIG_HEADER_DEFINE =
 TIP_MESSAGE =
 LINK_LIBS =
 ADD_DEFINES =

@@ -1,7 +1,7 @@
 
 #************************************************************************
 # QBAS
-# version 0.9.3
+# version 0.9.4
 # Copyright (c) 2003-2004 Gianluca Romanin ( J_Zar )
 #        <jayorama@users.sourceforge.net>
 #************************************************************************
@@ -413,7 +413,10 @@ contains( FOUND, true ) {
 	SUMMARY_MESSAGE += 	(locked)
 	}
 	contains( PROJECT_SETTINGS , enable_summary ) {
-			system( echo "	$${FEATURE}	==>	$${SUMMARY_MESSAGE}" >> summary.log )
+			# if already set into summary file, skip other output
+			!system( cat summary.log  | grep "$${FEATURE}" -q ) {
+				system( echo "	$${FEATURE}	==>	$${SUMMARY_MESSAGE}" >> summary.log )
+				}
 		}
 }
 

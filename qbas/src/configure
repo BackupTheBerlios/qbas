@@ -2,7 +2,7 @@
 
 #************************************************************************
 # QBAS
-# version 0.9.3
+# version 0.9.4
 # Copyright (c) 2003-2004 Gianluca Romanin ( J_Zar )
 #        <jayorama@users.sourceforge.net>
 #************************************************************************
@@ -29,13 +29,59 @@
 
 # inserting blanks...
 echo
-echo "-------------------------------------------"
+echo "-----------------------------------------------------"
 
 ######################### Main stage
 #
+
+# remove temp files if there are...
+rm -f l_temp
+rm -f help_temp
+rm -f a.out
+
+# Here set up the "help message" -------------------------
+# DELIMITER="£" : hoping not to find this char in build.definition!!
 if   test "$1" = "--help" || test "$1" = "-h"  || test "$1" = "--h";
 then
 	cat help ;
+	cat build.definition | grep "FEATURE" > l_temp ;
+	V=$( paste -s -d"£" l_temp  ) ;
+	
+	if [ "$V" != "" ] ; 
+	then
+		echo "		Custom options:" >> help_temp ;
+		echo " " >> help_temp ;
+	fi
+	
+	# 256 seems a good value of features...but could be internal exception
+	for (( u=1; u<256; u++ )); do
+		LINE=$(echo $V | cut -f$u -d"£") ;
+		ITEM=$(echo $LINE | cut -f2  -d"=" ) ;
+		ITEM=$(echo $ITEM | cut -f2  -d" " ) ;
+		
+		if [ "$ITEM" == "" ] ;
+		then
+			break ;
+		fi
+		
+		if ( !(cat help_temp | grep "$ITEM" -q ) ) ;
+		then 
+			echo "	--enable-$ITEM	Enable $ITEM realated code" >> help_temp ;
+			echo "	--disable-$ITEM	Disable $ITEM realated code" >> help_temp ;
+		fi
+	done
+	
+	if [ "$V" != "" ] ; 
+	then
+		echo " " >> help_temp ;
+		echo "-----------------------------------------------------" >> help_temp ;
+		echo " " >> help_temp ;
+	fi
+	
+	if test -e help_temp ;
+	then
+		cat help_temp ;
+	fi
 	exit
 fi
 
@@ -72,6 +118,7 @@ echo "Project file is:      $PROJECT_FILE" ;
 rm -f configure.def ;
 rm -f summary.log ;
 rm -f config.h ;
+
 
 # save project path variable
 echo "PROJECT_PATH = $PROJECT_PATH" >> configure.def ;

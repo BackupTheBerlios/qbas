@@ -1,5 +1,5 @@
 -----------------------------------------------------
-Qmake Building Automation System (QBAS) version 0.9.3
+Qmake Building Automation System (QBAS) version 0.9.4
 Copyright (c) 2003-2004 Gianluca Romanin (aka J_Zar)
 -----------------------------------------------------
 Usage:  ./configure  option1="value1;value2..." ...
@@ -37,4 +37,3 @@ adds two libs to be linked: /home/user/libx.so and /home/user/liby.a.
 $ ./configure     --enable-features="feat1;feat2"
 enable feat1 and feat2 to be compiled.
 -----------------------------------------------------
-
