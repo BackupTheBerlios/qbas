@@ -1,0 +1,67 @@
+<!DOCTYPE UI><UI version="3.2" stdsetdef="1">
+<class>SayHello_gui</class>
+<widget class="QWidget">
+    <property name="name">
+        <cstring>SayHello_gui</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>155</width>
+            <height>99</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>Say Hello!</string>
+    </property>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>textLabel1</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>41</x>
+                <y>21</y>
+                <width>78</width>
+                <height>24</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>&lt;font size="+1"&gt;Hello user!&lt;/font&gt;</string>
+        </property>
+    </widget>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>pushButton1</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>41</x>
+                <y>51</y>
+                <width>78</width>
+                <height>30</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>And bye!</string>
+        </property>
+    </widget>
+</widget>
+<connections>
+    <connection>
+        <sender>pushButton1</sender>
+        <signal>clicked()</signal>
+        <receiver>SayHello_gui</receiver>
+        <slot>close()</slot>
+    </connection>
+</connections>
+<includes>
+    <include location="local" impldecl="in implementation">sayhello_gui.ui.h</include>
+</includes>
+<slots>
+    <slot>pushButton1_clicked()</slot>
+</slots>
+<pixmapinproject/>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>

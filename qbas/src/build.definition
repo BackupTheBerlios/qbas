@@ -1,0 +1,46 @@
+
+# Project file definition ---------------------------------------------
+PROJECT_FILE = your_project.pro
+#----------------------------------------------------------------------
+
+
+# Qt Version definition -----------------------------------------------
+QT_MINIMUM_REQUIRED_VERSION = 030201
+QT_MINIMUM_REQUIRED_VERSION_STR = 3.2.1
+#----------------------------------------------------------------------
+
+# Custom error message ------------------------------------------------
+ERROR_TEMPLATE_MESSAGE = Cannot compile without
+#----------------------------------------------------------------------
+
+
+#   QT thread ---------------------------------------------------------
+OBJECT = lib/libqt-mt*
+TYPE = other
+DESCRIPTION = Qt library -mt
+TIP_MESSAGE = "Your QT system has been build without '-thread' option!"
+LINK_LIBS =
+ADD_DEFINES =
+ADD_SOURCES =
+ADD_HEADERS =
+ADD_CONFIG = thread
+OPTIONS =    exit_on_failure     skip_link
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+
+#   GLIB 1.2 ----------------------------------------------------------
+OBJECT = libglib.so
+TYPE = lib
+DESCRIPTION = GNU library (Glib) 1.2
+LINK_LIBS = -lglib
+OPTIONS =     exit_on_failure     skip_link
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+

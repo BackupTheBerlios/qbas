@@ -1,0 +1,215 @@
+
+# This is an hard coded example. You should remember that in
+# this file you could also use the qmake scripting syntax
+# ( see http://www.trolltech.com the "qmake User Guide" on the 
+# developers section ). Don't be worry about some strange
+# code lines: lot of them are quite uncommon to little projects... 
+# With high probability you'll see more than you need!
+# Never forget to repeat the whole BBLOCK each time! A 
+# field missing would mean the script failure (especially in
+# its functionality).
+
+
+# If you have more than one project file, her is the right
+# place where to choose the one we should compile.
+# If you have only one project file in the source dir
+# you could skip to set this field cause QBAS will
+# retrieve it by itself...
+# Project file definition ---------------------------------------------
+PROJECT_FILE = say_hello.pro
+#----------------------------------------------------------------------
+
+
+# Here you could define some Qt version requirements. Pay attention
+# to set correctly both variables or the version check will be skipped.
+# If you don't need that, you could just erase these 2 lines!
+# Qt Version definition -----------------------------------------------
+QT_MINIMUM_REQUIRED_VERSION = 030201
+QT_MINIMUM_REQUIRED_VERSION_STR = 3.2.1
+#----------------------------------------------------------------------
+
+
+
+# This is a typical BBLOCK ( see the readme file at section Configuration
+# to have a good description on that. Here we are checking for a special
+# OBJECT element (so using "other" as type).
+#   QT thread ---------------------------------------------------------
+OBJECT = lib/libqt-mt*
+TYPE = other
+DESCRIPTION = Qt library -mt
+TIP_MESSAGE = "Your QT system has been build without '-thread' option!"
+LINK_LIBS =
+ADD_DEFINES =
+ADD_SOURCES =
+ADD_HEADERS =
+ADD_CONFIG = thread
+OPTIONS =    exit_on_failure     skip_link
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+
+
+#   GCC ---------------------------------------------------------------
+OBJECT = gcc
+TYPE = bin
+DESCRIPTION = Gcc compiler
+TIP_MESSAGE = "No gcc compiler!"
+ADD_DEFINES = HAVE_GCC
+OPTIONS =
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+
+
+#   G++ ---------------------------------------------------------------
+OBJECT = g++
+TYPE = bin
+DESCRIPTION = G++ compiler
+TIP_MESSAGE = "No g++ compiler!"
+ADD_DEFINES = HAVE_GPP
+OPTIONS =
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+
+
+# As we said over, we could use also qmake script syntax.
+# This is quite good to have some conditional statement.
+# One method to do conditions is that:
+contains( DEFINES, HAVE_GPP ) {
+	# this will print a Project Message
+	message( "Condition "have g++" ok!" )
+}
+
+
+
+# BBLOCKs can also be included in conditions.
+# You can do conditional checks so:
+contains( DEFINES, HAVE_GCC ) {
+
+
+
+	#   STD LIB -----------------------------------------------------------
+	OBJECT = stdlib.h
+	TYPE = header
+	DESCRIPTION = Std lib header
+	TIP_MESSAGE = "No Std lib header but gcc is present!"
+	LINK_LIBS =
+	OPTIONS =
+	#----------------------------------------------------------------------
+	# Check routines         (DON'T TOUCH!)
+	include( check.qbas )
+	#----------------------------------------------------------------------
+	
+}
+
+
+
+#   GLIB 1.2 ----------------------------------------------------------
+OBJECT = libglib.so
+TYPE = lib
+DESCRIPTION = GNU library (Glib) 1.2
+LINK_LIBS = -lglib
+OPTIONS =    skip_link
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+# Pay attention: if TIP_MESSAGE is unset 
+# no tip message is printed...
+
+#   PKG-CONFIG --------------------------------------------------------
+OBJECT = pkg-config
+TYPE = bin
+DESCRIPTION =
+TIP_MESSAGE = "No pkg-config found!"
+ADD_DEFINES = HAVE_PKG_CONFIG
+OPTIONS =
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+
+#   JACK HEADERS ------------------------------------------------------
+OBJECT = jack/jack.h
+TYPE = header
+DESCRIPTION = Jack headers
+TIP_MESSAGE = "Jack headers needed to compile with Jack support!"
+LINK_LIBS =
+OPTIONS = 
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+
+
+#   JACK --------------------------------------------------------------
+OBJECT = libjack0.so
+TYPE = lib
+DESCRIPTION = Jack lib
+TIP_MESSAGE = "Jack needed!"
+LINK_LIBS = -ljack
+OPTIONS = skip_link
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+
+
+
+# If info about your OBJECT can be accessed by pkgconfig
+# you can retrieve package version trough a command type.
+# We do this trough a conditional block...
+contains( DEFINES, HAVE_PKG_CONFIG ) {
+
+	#   ALSAPLAYER --------------------------------------------------------
+	OBJECT = pkg-config --exists 'alsaplayer >= 0.99.76'
+	TYPE = command
+	DESCRIPTION = Alsaplayer >= 0.99.76
+	TIP_MESSAGE = "Cannot find Alsaplayer or version missmatch! If you are sure to be ok, PKG_CONFIG_PATH must be set properly."
+	LINK_LIBS =  -lalsaplayer
+	OPTIONS = skip_link
+	#----------------------------------------------------------------------
+	# Check routines         (DON'T TOUCH!)
+	include( check.qbas )
+	#----------------------------------------------------------------------
+
+
+} else {
+
+# if pkg-config is not in the system we should check in the standard way
+# but we can't check the version :-(
+
+	#   ALSAPLAYER --------------------------------------------------------
+	OBJECT = libalsaplayer.so
+	TYPE = lib
+	DESCRIPTION = Alsaplayer library
+	TIP_MESSAGE = "Cannot find Alsaplayer!"
+	LINK_LIBS =  -lalsaplayer
+	OPTIONS = skip_link
+	#----------------------------------------------------------------------
+	# Check routines         (DON'T TOUCH!)
+	include( check.qbas )
+	#----------------------------------------------------------------------
+}
+
+
+
+

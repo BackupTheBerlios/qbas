@@ -1,0 +1,230 @@
+
+              Qmake Building Automation System (QBAS)
+		----------------------------
+		         version 0.9
+		----------------------------
+	This program is provided as it is. Use it at your own risk.
+		See LICENSE for the license agreements
+------------------------------------------------------------------------
+
+
+1)---->            WHAT'S THAT?
+-------------------------------
+
+	QBAS is a group of scripts which could make Qt programmer's life
+easier... QBAS scripts allow the developer to use qmake (the nice Trolltech's
+program distributed with the Qt library, licensed QPL and included in almost
+all GNU/Linux distributions) to build a program, check for dependencies,
+set build defines without using the GNU tool jungle directly. At the moment
+QBAS is written for Qt code, but qmake allow standardization and could therically
+work for every kind of program (detached from interface libs).
+
+
+2)---->            REQUIREMENTS
+-------------------------------
+
+	The developer needs only a text editor. The user of your scripts
+need some packages:
+
+o)- qmake (find it at http://www.trolltech.com, but if you have Qt you have
+    also qmake!);
+o)- ld linker (libtool);
+o)- Bash shell;
+o)- Qt CORRECTLY installed (this means QTDIR env variable must be properly set!);
+
+
+3)---->                   USAGE
+-------------------------------
+
+	To set QBAS correctly for your code, you need only few steps:
+
+o)- You need a project file (.pro). You can generate it by QtDesigner
+    (this do not means you'll depend from Qt lib although!) or, if you know
+    the syntax, by yourself with a text editor (see at http://www.trolltech.com 
+    the "qmake User Guide" on the developers section);
+o)- Copy all what's in the "src" directory of this package in your
+    project source directory;
+o)- Add the line "include( main.qbas )" at the top of your project file 
+    ("something.pro");
+o)- Configure the file "build.definition" to suit your needs (section
+    "Configuration" of this readme);
+
+All done! Your user will be able to do "./configure && make && make install"!
+Qmake will take care to build an "ad hoc" Makefile for the user.
+
+
+4)---->     BASIC CONFIGURATION
+-------------------------------
+
+	What you need to configure is only the file "build.definition". However,
+you maybe would like to know more about other QBAS scripts :
+
+o)- "check.qbas" : it is the QBAS engine, where all the operations of linking,
+                   checking and other take place;
+o)- "paths.qbas" : here are defined all search paths, the stamp header, the
+                   platform. You could also modify paths if you need it for
+		   particular purpouses, but it is not suggested;
+o)- "main.qbas"  : the main script, where all subscripts are included.
+                   The footer is here;
+o)- "configure"  : it is a bash script. It checks for a sane environment, parses
+                   line options, checks if Qt is ok and then runs qmake;
+o)- "help"       : it is not a script but only the help message stamped by
+                   "./configure --help" or similar;
+o)- "build.definition" : as said over, it is the developer defined script;
+
+
+Let's talk about the latest. All is simple: the programmer should repeat a basical
+block (BBLOCK) for each library or program he needs. Marks used in comments that
+you should know are:
+
+(TOUCH!)  : means that the developers should modify this part;
+(DON'T TOUCH!) : this sub-block should be modified only if you know what you are
+            doing;
+
+Let we see a BBLOCK example:
+
+***********************************************************************
+***********************************************************************
+#   QT thread ---------------------------------------------------------
+OBJECT = lib/libqt-mt*
+TYPE = other
+DESCRIPTION = Qt library -mt
+TIP_MESSAGE = "Your QT system has been build without '-thread' option!"
+LINK_LIBS =
+ADD_DEFINES =
+ADD_SOURCES =
+ADD_HEADERS =
+ADD_CONFIG = thread
+OPTIONS =     exit_on_failure     skip_link
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+***********************************************************************
+***********************************************************************
+
+Each BBLOCK is a particular object which QBAS treats a different way
+depending from TYPE.
+
+Let we explain definition:
+
+" OBJECT " : this field CANNOT be undefined! It gives to QBAS
+	engine the basical object to act with. It could be of various types
+	(see later);
+" TYPE " : there are 5 types of objects: 
+		lib | bin | header | command | other .
+	Each one is treated in a different manner by the QBAS script
+	engine (check.qbas):
+	0)---- lib : it requires LINK_LIBS properly set and uses it to check 
+	for the OBJECT library existance in the user system. If all is ok, 
+	links what LINK_LIBS contains.
+	0)----- bin : search for the OBJECT binary existance.
+	0)----- header : search for the OBJECT header existance.
+	0)----- command : execute OBJECT in a detached shell:
+	if OBJECT exits with 1 then will link LINK_LIBS if the field is 
+	properly set;
+	0)----- other : search for the OBJECT generic existance.
+" DESCRIPTION " : this is the description which  will be showed (if
+	defined) in the stamp message. If not defined OBJECT will
+	be used to this scope;
+" TIP_MESSAGE " : if the OBJECT action or action over OBJECT fails and 
+	TIP_MESSAGE is set, then it will be used as an user-friendly
+	message;
+" LINK_LIBS " : used for the standard ld check and for linkage. LINK_LIBS 
+	must be a "ld" (libtool) compatible string: 
+	i.e. if OBJECT = libglib.so,  then LINK_LIBS = -lglib  
+	It is possible to set more than a lib on LINK_LIBS:
+	i.e LINK_LIBS = -logg -lvorbis ; 
+" ADD_DEFINES " : if OBJECT has success add this field as environment defines.
+	You could think at this field as the real substitute of the "config.h" 
+	system. An example: if in your sources you have "#ifdef HAVE_XY ...." 
+	and you add " ADD_DEFINES = HAVE_XY " the compiler will set HAVE_XY 
+	if OBJECT is ok;
+" ADD_SOURCES " : if OBJECT has success add source files to the project;
+" ADD_HEADERS " : if OBJECT has success add header files to the project;
+" ADD_CONFIG " : if OBJECT has success add configs to qmake environment;
+" OPTIONS " : You could wanna modify the basic behaviour of QBAS for
+	each BBLOCK instance. There are several options. Here's a list:
+	0)----- " exit_on_failure " : as it seems, exits on OBJECT failure;
+	0)----- " skip_link " : skip linking LINK_LIBS OBJECT on success;
+	0)----- " marked_static " : affect only 'lib' type. If STATIC_LIBPATH 
+	is set ( a way to set it is './configure --static-linking-path=YOURPATH' ) 
+	QBAS will link statically OBJECT from this path;
+	
+	
+NOTE: never forget that fields OBJECT, TYPE and, if TYPE is 'lib',LINK_LIBS
+	CANNOT be unset!!!!
+	
+NOTE2: it is possible to use jolly chars as '*'.
+
+
+
+So the example above searches for 'lib/libqt-mt*' ( showing the user something
+as "Checking for Qt library ....... XXX" ) and if all goes ok it adds
+the config parameter 'thread' to the project build. If it fails
+it exits with an error ( 'exit_on_failure' ).
+It doesn't link anything ( 'skip_link' ) and it's not
+marked static.
+If it fails, shows the user "QT system has been build without '-thread' option!".
+
+
+5)----> MORE ABOUT CONFIGURATION
+-------------------------------
+
+	There are several more things you could do in the "build.definition" 
+file. What you should know is explained in the section over but what you
+could know more about is explained here. There are some fields you could
+add in your build-file which are not strictly needed for every project
+and can be skipped. A list is here:
+
+" PROJECT_FILE " : if you have only one project file in your source dir,
+	you could freely skip this field because QBAS retrieves it by
+	itself. If indeed you have more than one project file, it is safe
+	to define which is the one QBAS should build (actually is not
+	supported the build of more than one project at the same time!).
+	If you don't do it, QBAS tryes with the first one listed by the 
+	"ls *.pro" bash command...
+" QT_MINIMUM_REQUIRED_VERSION " : set it if you wanna be sure that the user
+	has a certain Qt version >= of QT_MINIMUM_REQUIRED_VERSION. This
+	field is an int number calculated so:
+		MAJOR_VERSION*10000 + MINOR_VERSION*100 + MICRO_VERSION
+	QT_MINIMUM_REQUIRED_VERSION is always a number of 6 digits (if not
+	add zeros from the left). 
+	Let's have an example. For Qt 3.2.3, this will be:
+		3*10000 + 2*100 + 3 = 030203
+	QT_MINIMUM_REQUIRED_VERSION requires QT_MINIMUM_REQUIRED_VERSION_STR
+	to be set. If not, the whole check will be ignored. 
+" QT_MINIMUM_REQUIRED_VERSION_STR " : set it as a string representing the minimum
+	version needed. This field will be used in the friendly text output.
+	Let's have an example. For Qt 3.2.3 you should add the line:
+		QT_MINIMUM_REQUIRED_VERSION_STR = 3.2.3
+	QT_MINIMUM_REQUIRED_VERSION_STR requires QT_MINIMUM_REQUIRED_VERSION
+	to be set. If not, the whole check will be ignored.
+" ERROR_TEMPLATE_MESSAGE " : this is the error template used by QBAS. If the
+	field is unset, use default.
+	
+Finally you should rememeber that you could use the standard qmake script syntax
+in every part of your "build.definition". So you could do conditions, "syscalls"
+and other. See at http://www.trolltech.com the "qmake User Guide" to learn more 
+about it (see also examples).
+
+
+6)---->                EXAMPLES
+-------------------------------
+
+	In this package you'll find some examples in the "examples" dir. They are
+useful to understand QBAS usage. Take a look at the "readme" file in each dir.
+
+
+7)---->    AUTHORS & AGREEMENTS
+-------------------------------
+
+	Be careful to know the license statement of this program (GPL version 2).
+Read the file "license" distributed with this package or visit http://www.gnu.org
+for more informations.
+
+This code is provided by:
+
+0)- Gianluca Romanin (aka J_Zar), (jayorama_AT_users.sourceforge.net):
+    the main developer and maintainer.
+

@@ -1,0 +1,11 @@
+
+
+	This is a complete Qt example on how to use the QBAS environment
+to build your projects.
+
+	To compile it just try with "./configure && make". Pay attention
+to have Qt installed correctly ( see the main "readme" at section
+"usage" ). The program only set a window to say hello, but checks for many 
+controls and gives you an example of the QBAS power!
+
+	The example code is licensed free.
