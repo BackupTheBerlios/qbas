@@ -14,6 +14,10 @@ Version 0.9.5-----------------------------------
 
 0)+  Added PACKAGE feature: allow user to set custom paths
      for dependency checking and inclusion on PACKAGE;
+
+0)-  Corrected bug on linkage;
+
+0)+  Empowered linkage code and friendly output; 
      
      
      

@@ -152,7 +152,7 @@ Let we explain definition:
 	./configure   --enable-FEATURE_NAME
 		or
 	./configure   --disable-FEATURE_NAME;
-	FEATURE field could be set on more than a block.
+	The same FEATURE field could be set on more than a block.
 
 " PACKAGE " : he user can set the path for PACKAGE with:
 	./configure   --with-PACKAGE=CUSTOM_DIR
@@ -160,7 +160,7 @@ Let we explain definition:
 	dependency checking and inclusion (if OBJECT is lib). If
 	user configures as said over, marked_static option will
 	be overrided. 
-	PACKAGE field could be set on more than a block.
+	The same PACKAGE field could be set on more than a block.
 
 	
 " TIP_MESSAGE " : if the OBJECT action or action over OBJECT fails and 

@@ -91,7 +91,7 @@ then
 		then
 			break ;
 		else 
-			echo "--with-$ITEM=DIR		Set DIR as dep-path for $ITEM" >> help_temp ;
+			echo "--with-$ITEM=DIR		Set DIR as dependency directory for $ITEM" >> help_temp ;
 		fi
 	done
 	
@@ -165,10 +165,9 @@ fi
 
 # Init the warning configuration
 echo "CONFIG	+= warn_on" >> configure.def
-echo "CONFIG	-= warn_off" >> configure.def
 
 
-# parsing arguments
+# parsing arguments-------------------------------------------->>
 for (( d=1; d<$NUM_OPT; d++ )); do
 
 	# retrieve the field $d
@@ -388,6 +387,7 @@ for (( d=1; d<$NUM_OPT; d++ )); do
 		exit
 	fi
 done
+# parsing arguments--------------------------------------------<< (END)
 
 
 # rolling to go with qmake...
