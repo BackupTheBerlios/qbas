@@ -1,7 +1,7 @@
 
               Qmake Building Automation System (QBAS)
 		----------------------------
-		       version 0.9.4
+		       version 0.9.5
 		----------------------------
 	This program is provided as it is. Use it at your own risk.
 		See LICENSE for the license agreements
@@ -152,6 +152,16 @@ Let we explain definition:
 	./configure   --enable-FEATURE_NAME
 		or
 	./configure   --disable-FEATURE_NAME;
+	FEATURE field could be set on more than a block.
+
+" PACKAGE " : he user can set the path for PACKAGE with:
+	./configure   --with-PACKAGE=CUSTOM_DIR
+	Then the whole code will use the user defined path for
+	dependency checking and inclusion (if OBJECT is lib). If
+	user configures as said over, marked_static option will
+	be overrided. 
+	PACKAGE field could be set on more than a block.
+
 	
 " TIP_MESSAGE " : if the OBJECT action or action over OBJECT fails and 
 	TIP_MESSAGE is set, then it will be used as an user-friendly
@@ -190,8 +200,7 @@ Let we explain definition:
 	
 	
 	
-NOTE: never forget that fields OBJECT, TYPE and, if TYPE is 'lib',LINK_LIBS
-	CANNOT be unset!!!!
+NOTE: never forget that fields OBJECT, TYPE CANNOT be unset!!!!
 	
 NOTE2: it is possible to use jolly chars as '*'.
 
@@ -253,7 +262,7 @@ and can be skipped. A list is here:
 	a link is skipped. If the field is unset, use default.
 	
 " PROJECT_SETTINGS " : QBAS is capable to provide some optional features:
-	0)----- " enable_config_h " : autoheader copatibility. QBAS will generate
+	0)----- " enable_config_h " : autoheader compatibility. QBAS will generate
 		a 'config.h' file that will be autoincluded in the project,
 		following the 'CONFIG_HEADER_DEFINE' directives of the developer
 		( see above ). QBAS is capable of using a 'config.h.in' file as
@@ -289,6 +298,6 @@ for more informations.
 
 This code is provided by:
 
-0)- Gianluca Romanin (aka J_Zar), (jayorama_AT_users.sourceforge.net):
+0)- Gianluca Romanin (aka J_Zar), (j_zar_AT_users.berlios.de):
     the main developer and maintainer.
 

@@ -3,6 +3,21 @@
 
 		----->>>   CHANGELOG   <<<-----
 		
+Version 0.9.5-----------------------------------
+-------------------------------------------------
+( 26-06-2004 )
+
+0)-  Changed the "--includedir" option with "--dependency-dir"
+     in configure script to avoid confusing with autoconf parameters;
+     
+0)+  Added option "--disable-warnings" in configure script;
+
+0)+  Added PACKAGE feature: allow user to set custom paths
+     for dependency checking and inclusion on PACKAGE;
+     
+     
+     
+     
 Version 0.9.4 -----------------------------------
 -------------------------------------------------
 ( 28-05-2004 )
