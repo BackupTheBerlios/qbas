@@ -1,7 +1,7 @@
 
 #************************************************************************
 # QBAS
-# version 0.9.3
+# version 0.9.5
 # Copyright (c) 2003-2004 Gianluca Romanin ( J_Zar )
 #        <jayorama@users.sourceforge.net>
 #************************************************************************
@@ -35,6 +35,8 @@ FOUND = false
 # by default we suppose not to have features and DO_ACTIONS
 # is always true...
 DO_ACTIONS = true
+# Init the package path to null value... (used if --with-PACKAGE is set by configure)
+PACKAGE_PATH =
 # --------------------------------------
 # Generic init step (only once)... 
 # --------------------------------------
@@ -77,6 +79,12 @@ contains( INIT, true ) {
 		}
 		else {
 		SKIP_LINK_MESSAGE = , skipped
+		}
+	!isEmpty( USER_DEFINED_PATH_TEMPLATE_MESSAGE ) {
+		USER_DEFINED_MESSAGE = "$${USER_DEFINED_PATH_TEMPLATE_MESSAGE}"
+		}
+		else {
+		USER_DEFINED_PATH_MESSAGE =   (user defined)
 		}
 	# all done: no more through this step!
 	INIT = false
@@ -157,6 +165,15 @@ isEmpty( TYPE ) {
 		}
 		}
 	}
+# --------------------------------------
+# if PACKAGE is set we act properly... 
+# --------------------------------------
+!isEmpty( PACKAGE ) {
+	contains( USER_DEFINED_PACKAGES, $${PACKAGE} ) {
+		TMP = $$system( cat configure.def | grep "$${PACKAGE}_PATH" )
+		PACKAGE_PATH = $$system( echo $${TMP} | cut -f2  -d"=" )
+		} 
+	}
 
 
 
@@ -169,53 +186,66 @@ contains( TYPE, lib ) {
 # if we have a library
 IS_LIB = true
 
-# --------------------------- marked static -------------------------------
-# static linking for package
-contains( OPTIONS, marked_static ) {
-	!isEmpty( STATIC_LIBPATH ) {
+# --------------------------- PACKAGE path is user defined ----------------
+!isEmpty( PACKAGE_PATH ) {
+	exists( $${PACKAGE_PATH}/$${OBJECT} ) {
 		!contains( OPTIONS, skip_link ) {
-			LIBS += $${STATIC_LIBPATH}/$${OBJECT}
+			LIBS += $${PACKAGE_PATH}/$${OBJECT}
 			}
 		FOUND = true
-	}
-}
-
-# --------------------------- lib 'ld' check ------------------------------
-contains( FOUND, false) {
-# --------------------------------------
-# STANDARD LIB CHECK
-# At first ----> check using LD
-# --------------------------------------
-!isEmpty( LINK_LIBS ) {
-	system( ld $${LINK_LIBS} 2>/dev/null ) {
-		FOUND = true
 		}
-}
+} else { 
 
-# --------------------------- lib existance check -------------------------
-# If this fails ----> check the file existence
-contains( FOUND, false) {
-	exists( $${LIB_BASE0}/$${OBJECT} ) {
-		!contains( OPTIONS, skip_link ) {
-			LIBS += $${LIB_BASE0}/$${OBJECT}
-			} 
-		FOUND = true
-	} else {
-		exists( $${LIB_BASE1}/$${OBJECT} ) {
+	# --------------------------- marked static -------------------------------
+	contains( FOUND, false) {
+	# static linking for package
+	contains( OPTIONS, marked_static ) {
+		!isEmpty( STATIC_LIBPATH ) {
 			!contains( OPTIONS, skip_link ) {
-				LIBS += $${LIB_BASE1}/$${OBJECT}
-				} 
+				LIBS += $${STATIC_LIBPATH}/$${OBJECT}
+				}
 			FOUND = true
+		}	
 		}
-		} else {
-			exists( $${LIB_BASE2}/$${OBJECT} ) {
+	}
+	
+	# --------------------------- lib 'ld' check ------------------------------
+	contains( FOUND, false) {
+		# --------------------------------------
+		# STANDARD LIB CHECK
+		# At first ----> check using LD
+		# --------------------------------------
+		!isEmpty( LINK_LIBS ) {
+			system( ld $${LINK_LIBS} 2>/dev/null ) {
+				FOUND = true
+				}
+		}
+		
+		# --------------------------- lib existance check -------------------------
+		# If this fails ----> check the file existence
+		contains( FOUND, false) {
+			exists( $${LIB_BASE0}/$${OBJECT} ) {
 				!contains( OPTIONS, skip_link ) {
-					LIBS += $${LIB_BASE2}/$${OBJECT}
+					LIBS += $${LIB_BASE0}/$${OBJECT}
 					} 
 				FOUND = true
-			}
+			} else {
+				exists( $${LIB_BASE1}/$${OBJECT} ) {
+					!contains( OPTIONS, skip_link ) {
+						LIBS += $${LIB_BASE1}/$${OBJECT}
+						} 
+					FOUND = true
+				}
+				} else {
+					exists( $${LIB_BASE2}/$${OBJECT} ) {
+						!contains( OPTIONS, skip_link ) {
+							LIBS += $${LIB_BASE2}/$${OBJECT}
+							} 
+						FOUND = true
+					}
+				}
 		}
-}
+	}
 }
 } else {
 IS_LIB = false
@@ -227,6 +257,13 @@ IS_LIB = false
 # -------------------------------------------------------------------------
 contains( TYPE, bin ) {
 # if we have a binary
+# ------  PACKAGE path is user defined  -----------
+!isEmpty( PACKAGE_PATH ) {
+	exists( $${PACKAGE_PATH}/$${OBJECT} ) {
+		FOUND = true
+		}
+} else {
+# ---------------  standard  ----------------------
 exists( $${BIN_BASE0}/$${OBJECT} ) {
 	FOUND = true
 	} else {
@@ -235,6 +272,7 @@ exists( $${BIN_BASE0}/$${OBJECT} ) {
 			}
 		}
 }
+}
 
 
 # --------------------------- header type ---------------------------------
@@ -242,6 +280,13 @@ exists( $${BIN_BASE0}/$${OBJECT} ) {
 # -------------------------------------------------------------------------
 contains( TYPE, header ) {
 # if we have header
+# ------  PACKAGE path is user defined  -----------
+!isEmpty( PACKAGE_PATH ) {
+	exists( $${PACKAGE_PATH}/$${OBJECT} ) {
+		FOUND = true
+		}
+} else {
+# ---------------  standard  ----------------------
 exists( $${HEADER_BASE0}/$${OBJECT} ) {
 	FOUND = true
 	} else {
@@ -249,6 +294,7 @@ exists( $${HEADER_BASE0}/$${OBJECT} ) {
 			FOUND = true
 			}
 		}
+}
 }
 
 
@@ -270,6 +316,13 @@ system( $${OBJECT} ) {
 # -------------------------------------------------------------------------
 contains( TYPE, other ) {
 # if we have other stuff
+# ------  PACKAGE path is user defined  -----------
+!isEmpty( PACKAGE_PATH ) {
+	exists( $${PACKAGE_PATH}/$${OBJECT} ) {
+		FOUND = true
+		}
+} else {
+# ---------------  standard  ----------------------
 exists( $${OPTIONAL_BASE0}/$${OBJECT} ) {
 	FOUND = true
 	} else {
@@ -282,63 +335,66 @@ exists( $${OPTIONAL_BASE0}/$${OBJECT} ) {
 				}
 		}
 }
+}
 
 # --------------------------- not found but... ----------------------------
 # -------------------------------------------------------------------------
 # -------------------------------------------------------------------------
 # if not found check with user-added paths
 # This code is not much sharp... Dirty hack...
-contains( FOUND, false) {
-		!isEmpty( PATH1 ) {
-			exists( $$PATH1/$${OBJECT} ){
-			contains( IS_LIB, true) {
-				!contains( OPTIONS, skip_link ) {
-					LIBS += $$PATH1/$${OBJECT}
-					}
+isEmpty( PACKAGE_PATH ) {
+	contains( FOUND, false) {
+			!isEmpty( PATH1 ) {
+				exists( $$PATH1/$${OBJECT} ){
+				contains( IS_LIB, true) {
+					!contains( OPTIONS, skip_link ) {
+						LIBS += $$PATH1/$${OBJECT}
+						}
+				}
+				FOUND = true
+				}
 			}
-			FOUND = true
+			!isEmpty( PATH2 ) {
+				exists( $$PATH2/$${OBJECT} ){
+				contains( IS_LIB, true) {
+					!contains( OPTIONS, skip_link ) {
+						LIBS += $$PATH2/$${OBJECT}
+						}
+				}
+				FOUND = true
+				}
 			}
-		}
-		!isEmpty( PATH2 ) {
-			exists( $$PATH2/$${OBJECT} ){
-			contains( IS_LIB, true) {
-				!contains( OPTIONS, skip_link ) {
-					LIBS += $$PATH2/$${OBJECT}
-					}
+			!isEmpty( PATH3 ) {
+				exists( $$PATH3/$${OBJECT} ){
+				contains( IS_LIB, true) {
+					!contains( OPTIONS, skip_link ) {
+						LIBS += $$PATH3/$${OBJECT}
+						}
+				}
+				FOUND = true
+				}
 			}
-			FOUND = true
+			!isEmpty( PATH4 ) {
+				exists( $$PATH4/$${OBJECT} ){
+				contains( IS_LIB, true) {
+					!contains( OPTIONS, skip_link ) {
+						LIBS += $$PATH4/$${OBJECT}
+						}
+				}
+				FOUND = true
+				}
 			}
-		}
-		!isEmpty( PATH3 ) {
-			exists( $$PATH3/$${OBJECT} ){
-			contains( IS_LIB, true) {
-				!contains( OPTIONS, skip_link ) {
-					LIBS += $$PATH3/$${OBJECT}
-					}
+			!isEmpty( PATH5 ) {
+				exists( $$PATH5/$${OBJECT} ){
+				contains( IS_LIB, true) {
+					!contains( OPTIONS, skip_link ) {
+						LIBS += $$PATH5/$${OBJECT}
+						}
+				}
+				FOUND = true
+				}
 			}
-			FOUND = true
-			}
-		}
-		!isEmpty( PATH4 ) {
-			exists( $$PATH4/$${OBJECT} ){
-			contains( IS_LIB, true) {
-				!contains( OPTIONS, skip_link ) {
-					LIBS += $$PATH4/$${OBJECT}
-					}
-			}
-			FOUND = true
-			}
-		}
-		!isEmpty( PATH5 ) {
-			exists( $$PATH5/$${OBJECT} ){
-			contains( IS_LIB, true) {
-				!contains( OPTIONS, skip_link ) {
-					LIBS += $$PATH5/$${OBJECT}
-					}
-			}
-			FOUND = true
-			}
-		}
+	}
 }
 
 
@@ -358,6 +414,9 @@ contains( FOUND, true) {
 					MESSAGE += $${STATIC_MESSAGE}
 					}
 				}
+		!isEmpty( PACKAGE_PATH ) {
+			MESSAGE += $${USER_DEFINED_PATH_MESSAGE}
+			}
 #		}
 	message( $${MESSAGE} )
 }
@@ -392,7 +451,9 @@ contains( FOUND, true ) {
 	contains( DO_ACTIONS , true ) {
 		!contains( OPTIONS, skip_link ) {
 			!contains( MESSAGE, statically ) {
-				LIBS += $${LINK_LIBS}
+				isEmpty( PACKAGE_PATH ) {
+					LIBS += $${LINK_LIBS}
+					}
 				}
 			}
 		DEFINES += $${ADD_DEFINES}
@@ -413,7 +474,10 @@ contains( FOUND, true ) {
 	SUMMARY_MESSAGE += 	(locked)
 	}
 	contains( PROJECT_SETTINGS , enable_summary ) {
-			system( echo "	$${FEATURE}	==>	$${SUMMARY_MESSAGE}" >> summary.log )
+			# if already set into summary file, skip other output
+			!system( cat summary.log  | grep "$${FEATURE}" -q ) {
+				system( echo "	$${FEATURE}	==>	$${SUMMARY_MESSAGE}" >> summary.log )
+				}
 		}
 }
 
@@ -449,3 +513,4 @@ ADD_SOURCES =
 ADD_HEADERS =
 ADD_CONFIG =
 OPTIONS =
+PACKAGE =
