@@ -181,7 +181,7 @@ TYPE = lib
 DESCRIPTION = Vorbisfile library
 TIP_MESSAGE = Vorbisfile library is needed for ogg playback!"
 LINK_LIBS = -lvorbisfile
-ADD_DEFINES = HAVE_OGG
+ADD_DEFINES = 
 OPTIONS =   exit_on_failure
 #----------------------------------------------------------------------
 # Check routines         (DON'T TOUCH!)
