@@ -2,7 +2,7 @@
 
 #************************************************************************
 # QBAS
-# version 0.9.5
+# version 0.9.6
 # Copyright (c) 2003-2004 Gianluca Romanin ( J_Zar )
 #        <jayorama@users.sourceforge.net>
 #************************************************************************
@@ -91,7 +91,7 @@ then
 		then
 			break ;
 		else 
-			echo "--with-$ITEM=DIR		Set DIR as dep-path for $ITEM" >> help_temp ;
+			echo "--with-$ITEM=DIR		Set DIR as dependency directory for $ITEM" >> help_temp ;
 		fi
 	done
 	
@@ -165,10 +165,9 @@ fi
 
 # Init the warning configuration
 echo "CONFIG	+= warn_on" >> configure.def
-echo "CONFIG	-= warn_off" >> configure.def
 
 
-# parsing arguments
+# parsing arguments-------------------------------------------->>
 for (( d=1; d<$NUM_OPT; d++ )); do
 
 	# retrieve the field $d
@@ -260,8 +259,13 @@ for (( d=1; d<$NUM_OPT; d++ )); do
 		STATUS="ok"
 	fi
 
-	if [ "$OPT" = "--static-linking-path" ];
+	if [ "$OPT" = "--static-link" ];
 	then
+		# correcting a wide bug ;-(
+		if [ "$VAL" == "--static-link" ];
+		then
+			VAL="1";
+		fi
 		echo "STATIC_LIBPATH = $VAL" >> configure.def
 		STATUS="ok"
 	fi
@@ -388,6 +392,7 @@ for (( d=1; d<$NUM_OPT; d++ )); do
 		exit
 	fi
 done
+# parsing arguments--------------------------------------------<< (END)
 
 
 # rolling to go with qmake...

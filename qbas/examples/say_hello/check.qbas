@@ -1,7 +1,7 @@
 
 #************************************************************************
 # QBAS
-# version 0.9.5
+# version 0.9.6
 # Copyright (c) 2003-2004 Gianluca Romanin ( J_Zar )
 #        <jayorama@users.sourceforge.net>
 #************************************************************************
@@ -37,6 +37,8 @@ FOUND = false
 DO_ACTIONS = true
 # Init the package path to null value... (used if --with-PACKAGE is set by configure)
 PACKAGE_PATH =
+# Variable for internal use: take trace of linking type.
+LINK_TYPE = standard
 # --------------------------------------
 # Generic init step (only once)... 
 # --------------------------------------
@@ -172,6 +174,7 @@ isEmpty( TYPE ) {
 	contains( USER_DEFINED_PACKAGES, $${PACKAGE} ) {
 		TMP = $$system( cat configure.def | grep "$${PACKAGE}_PATH" )
 		PACKAGE_PATH = $$system( echo $${TMP} | cut -f2  -d"=" )
+		LINK_TYPE = user_defined
 		} 
 	}
 
@@ -201,13 +204,42 @@ IS_LIB = true
 	# static linking for package
 	contains( OPTIONS, marked_static ) {
 		!isEmpty( STATIC_LIBPATH ) {
-			!contains( OPTIONS, skip_link ) {
-				LIBS += $${STATIC_LIBPATH}/$${OBJECT}
-				}
-			FOUND = true
-		}	
+			exists( $${STATIC_LIBPATH}/$${OBJECT} ) {
+				!contains( OPTIONS, skip_link ) {
+					LIBS += $${STATIC_LIBPATH}/$${OBJECT}
+					LINK_TYPE = static
+					}
+				FOUND = true
+				} else {
+					exists( $${LIB_BASE0}/$${OBJECT} ) {
+						!contains( OPTIONS, skip_link ) {
+							LIBS += $${LIB_BASE0}/$${OBJECT}
+							LINK_TYPE = static
+							} 
+						FOUND = true
+						} else {
+							exists( $${LIB_BASE1}/$${OBJECT} ) {
+								!contains( OPTIONS, skip_link ) {
+									LIBS += $${LIB_BASE1}/$${OBJECT}
+									LINK_TYPE = static
+									} 
+								FOUND = true
+								} else {
+									exists( $${LIB_BASE2}/$${OBJECT} ) {
+										!contains( OPTIONS, skip_link ) {
+											LIBS += $${LIB_BASE2}/$${OBJECT}
+											LINK_TYPE = static
+											} 
+										FOUND = true
+										} else {
+											FOUND = static_failure
+											}
+									}
+							}
+					}
+			}	
 		}
-	}
+		}
 	
 	# --------------------------- lib 'ld' check ------------------------------
 	contains( FOUND, false) {
@@ -218,6 +250,7 @@ IS_LIB = true
 		!isEmpty( LINK_LIBS ) {
 			system( ld $${LINK_LIBS} 2>/dev/null ) {
 				FOUND = true
+				LINK_TYPE = shared
 				}
 		}
 		
@@ -227,29 +260,33 @@ IS_LIB = true
 			exists( $${LIB_BASE0}/$${OBJECT} ) {
 				!contains( OPTIONS, skip_link ) {
 					LIBS += $${LIB_BASE0}/$${OBJECT}
+					LINK_TYPE = static
 					} 
 				FOUND = true
-			} else {
-				exists( $${LIB_BASE1}/$${OBJECT} ) {
-					!contains( OPTIONS, skip_link ) {
-						LIBS += $${LIB_BASE1}/$${OBJECT}
-						} 
-					FOUND = true
-				}
 				} else {
-					exists( $${LIB_BASE2}/$${OBJECT} ) {
+					exists( $${LIB_BASE1}/$${OBJECT} ) {
 						!contains( OPTIONS, skip_link ) {
-							LIBS += $${LIB_BASE2}/$${OBJECT}
+							LIBS += $${LIB_BASE1}/$${OBJECT}
+							LINK_TYPE = static
 							} 
 						FOUND = true
+						} else {
+							exists( $${LIB_BASE2}/$${OBJECT} ) {
+								!contains( OPTIONS, skip_link ) {
+									LIBS += $${LIB_BASE2}/$${OBJECT}
+									LINK_TYPE = static
+									} 
+								FOUND = true
+								}
+							}
+					  
 					}
-				}
+			}
 		}
 	}
-}
 } else {
-IS_LIB = false
-}
+	IS_LIB = false
+	}
 
 
 # --------------------------- bin type ------------------------------------
@@ -349,6 +386,7 @@ isEmpty( PACKAGE_PATH ) {
 				contains( IS_LIB, true) {
 					!contains( OPTIONS, skip_link ) {
 						LIBS += $$PATH1/$${OBJECT}
+						LINK_TYPE = static
 						}
 				}
 				FOUND = true
@@ -359,6 +397,7 @@ isEmpty( PACKAGE_PATH ) {
 				contains( IS_LIB, true) {
 					!contains( OPTIONS, skip_link ) {
 						LIBS += $$PATH2/$${OBJECT}
+						LINK_TYPE = static
 						}
 				}
 				FOUND = true
@@ -369,6 +408,7 @@ isEmpty( PACKAGE_PATH ) {
 				contains( IS_LIB, true) {
 					!contains( OPTIONS, skip_link ) {
 						LIBS += $$PATH3/$${OBJECT}
+						LINK_TYPE = static
 						}
 				}
 				FOUND = true
@@ -379,6 +419,7 @@ isEmpty( PACKAGE_PATH ) {
 				contains( IS_LIB, true) {
 					!contains( OPTIONS, skip_link ) {
 						LIBS += $$PATH4/$${OBJECT}
+						LINK_TYPE = static
 						}
 				}
 				FOUND = true
@@ -389,6 +430,7 @@ isEmpty( PACKAGE_PATH ) {
 				contains( IS_LIB, true) {
 					!contains( OPTIONS, skip_link ) {
 						LIBS += $$PATH5/$${OBJECT}
+						LINK_TYPE = static
 						}
 				}
 				FOUND = true
@@ -409,8 +451,7 @@ contains( FOUND, true) {
 			MESSAGE += $${SKIP_LINK_MESSAGE}
 			}
 			else {
-				VAR = $$find( LIBS, $${OBJECT} )
-				!isEmpty( VAR ) {
+				contains( LINK_TYPE, static) {
 					MESSAGE += $${STATIC_MESSAGE}
 					}
 				}
@@ -440,6 +481,10 @@ contains( FOUND, false) {
 		error( $${ERROR_MESSAGE} )
 	}
 }
+contains( FOUND, static_failure ) {
+		message( "**************************************" )
+		error( "Failure on static linkage: object not found where expected!" )
+	}
 
 
 # --------------------------- actions -------------------------------------
@@ -450,7 +495,7 @@ contains( FOUND, false) {
 contains( FOUND, true ) {
 	contains( DO_ACTIONS , true ) {
 		!contains( OPTIONS, skip_link ) {
-			!contains( MESSAGE, statically ) {
+			!contains( LINK_TYPE , static ) {
 				isEmpty( PACKAGE_PATH ) {
 					LIBS += $${LINK_LIBS}
 					}

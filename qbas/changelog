@@ -3,6 +3,27 @@
 
 		----->>>   CHANGELOG   <<<-----
 		
+Version 0.9.6-----------------------------------
+-------------------------------------------------
+( 04-07-2004 )
+
+0)+  Changes in the linkage scheme thanks to Peter Chang suggestions.
+     Now "marked_static" option tryes the static linkage also on
+     default paths before trying with shared. Added code to check
+     lib existance if marked_static is set;
+     
+0)+  Changed option "--static-linking-path" in "--static-link" in configure 
+     script. Not defining a path on this option will automatically define
+     STATIC_LIBPATH = 1 in configure.def to make work the proper code
+     for static linkage. Code of lib existance needs a speed-up although;
+
+0)-  Corrected bug on output message thanks to Peter Chang;
+
+0)-  Corrected bug on lib existance code ( wrong branch );
+
+
+
+
 Version 0.9.5-----------------------------------
 -------------------------------------------------
 ( 26-06-2004 )
