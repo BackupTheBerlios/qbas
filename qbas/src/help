@@ -1,5 +1,5 @@
 -----------------------------------------------------
-Qmake Building Automation System (QBAS) version 0.9
+Qmake Building Automation System (QBAS) version 0.9.3
 Copyright (c) 2003-2004 Gianluca Romanin (aka J_Zar)
 -----------------------------------------------------
 Usage:  ./configure  option1="value1;value2..." ...
@@ -10,13 +10,15 @@ Options:
 --includedir		adds a path for dependency checking (max allowed = 5)
 --includelib		adds a library for compiling
 --prefix		define the install directory prefix
---cflags		adds cflags to the project
---cxxflags		adds cxxflags to the project
---lflags		adds lflags to the project
+--cflags		overwrite default cflags with user defined
+--cxxflags		overwrite default cxxflags with user defined
+--lflags		overwrite default lflags with user defined
 --static-linking-path	define the path to link statically libs
 --enable-debug		enable debug mode (only for QT projects!)
+--enable-FEATURE	enable FEATURE 
+--disable-FEATURE	disable FEATURE
 
-INVALID OPTIONS ARE SKIPPED!
+
 
 Examples:
 
@@ -31,5 +33,8 @@ it will be used /home/user/program as prefix.
 
 $ ./configure     --includelib="/home/user/libx.so;/home/user/liby.a"
 adds two libs to be linked: /home/user/libx.so and /home/user/liby.a.
+
+$ ./configure     --enable-features="feat1;feat2"
+enable feat1 and feat2 to be compiled.
 -----------------------------------------------------
 

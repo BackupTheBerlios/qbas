@@ -1,6 +1,7 @@
 
 # Project file definition ---------------------------------------------
 PROJECT_FILE = your_project.pro
+PROJECT_SETTINGS = enable_summary
 #----------------------------------------------------------------------
 
 
@@ -18,13 +19,15 @@ ERROR_TEMPLATE_MESSAGE = Cannot compile without
 OBJECT = lib/libqt-mt*
 TYPE = other
 DESCRIPTION = Qt library -mt
+FEATURE = qt
 TIP_MESSAGE = "Your QT system has been build without '-thread' option!"
 LINK_LIBS =
 ADD_DEFINES =
 ADD_SOURCES =
 ADD_HEADERS =
 ADD_CONFIG = thread
-OPTIONS =    exit_on_failure     skip_link
+OPTIONS =    exit_on_failure     skip_link    
+disable_feature     lock_feature
 #----------------------------------------------------------------------
 # Check routines         (DON'T TOUCH!)
 include( check.qbas )

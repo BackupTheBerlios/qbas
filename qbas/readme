@@ -1,7 +1,7 @@
 
               Qmake Building Automation System (QBAS)
 		----------------------------
-		         version 0.9
+		       version 0.9.2
 		----------------------------
 	This program is provided as it is. Use it at your own risk.
 		See LICENSE for the license agreements
@@ -15,9 +15,9 @@
 easier... QBAS scripts allow the developer to use qmake (the nice Trolltech's
 program distributed with the Qt library, licensed QPL and included in almost
 all GNU/Linux distributions) to build a program, check for dependencies,
-set build defines without using the GNU tool jungle directly. At the moment
-QBAS is written for Qt code, but qmake allow standardization and could therically
-work for every kind of program (detached from interface libs).
+set build defines and create a Makefile without using the GNU tool jungle directly. 
+At the moment QBAS is written for Qt code, but qmake allow standardization and 
+could therically work for every kind of program (detached from interface libs).
 
 
 2)---->            REQUIREMENTS
@@ -127,6 +127,18 @@ Let we explain definition:
 " DESCRIPTION " : this is the description which  will be showed (if
 	defined) in the stamp message. If not defined OBJECT will
 	be used to this scope;
+" FEATURE " : if OBJECT provides a feature you should set it here with
+	its extended name ( i.e. "FEATURE = alsa").
+	Then the user could enable/disable it through the configure
+	script (only if the developer allows it). To set a feature
+	enabled/disabled by default you should add to the OPTIONS field
+	"enable_feature"/"disable_feature". If you wanna lock this
+	feature (so the user can't enable/disable it) you should add 
+	to the OPTIONS field also "lock_feature".
+	The user can modify (if unlocked) feature statement with:
+	./configure   --enable-FEATURE_NAME
+		or
+	./configure   --disable-FEATURE_NAME;
 " TIP_MESSAGE " : if the OBJECT action or action over OBJECT fails and 
 	TIP_MESSAGE is set, then it will be used as an user-friendly
 	message;
@@ -150,6 +162,10 @@ Let we explain definition:
 	0)----- " marked_static " : affect only 'lib' type. If STATIC_LIBPATH 
 	is set ( a way to set it is './configure --static-linking-path=YOURPATH' ) 
 	QBAS will link statically OBJECT from this path;
+	0)----- " enable_feature " : if FEATURE is defined, set it to default enabled;
+	0)----- " disable_feature " : if FEATURE is defined, set it to default disabled;
+	0)----- " lock_feature " : if FEATURE is defined, lock it and do not allow
+	the user to change feature statement;
 	
 	
 NOTE: never forget that fields OBJECT, TYPE and, if TYPE is 'lib',LINK_LIBS
@@ -202,6 +218,10 @@ and can be skipped. A list is here:
 	to be set. If not, the whole check will be ignored.
 " ERROR_TEMPLATE_MESSAGE " : this is the error template used by QBAS. If the
 	field is unset, use default.
+" STATIC_TEMPLATE_MESSAGE " : this is the static template message used by QBAS. 
+	If the field is unset, use default.
+" SKIP_LINK_TEMPLATE_MESSAGE " : this is the template message for showing when
+	a link is skipped. If the field is unset, use default.
 	
 Finally you should rememeber that you could use the standard qmake script syntax
 in every part of your "build.definition". So you could do conditions, "syscalls"

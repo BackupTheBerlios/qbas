@@ -1,7 +1,7 @@
 
 #************************************************************************
 # QBAS
-# version 0.9
+# version 0.9.3
 # Copyright (c) 2003-2004 Gianluca Romanin ( J_Zar )
 #        <jayorama@users.sourceforge.net>
 #************************************************************************
@@ -31,11 +31,29 @@
 include( paths.qbas )
 # --------------------------------------------------
 
+# If we don't have a debug build, set 'release' optimization...
+!contains( CONFIG, debug ) {
+	CONFIG += release
+}
 
 # --------------------------------------------------
 # Depend definitions         (DON'T TOUCH!)
 include( build.definition )
 # --------------------------------------------------
+
+# close the summary output then print it...
+contains( PROJECT_SETTINGS , enable_summary ) {
+		system( echo " " >> summary.log )
+		system( echo "	--------------------------------------" >> summary.log )
+		system( echo " " >> summary.log )
+		system( cat summary.log )
+	}
+# if we don't have a Qt project, try to unlink Qt libs...
+# KNOWN BUG: this code is bypassed by Qmake so does not work!
+contains( PROJECT_SETTINGS , no_qt ) {
+		LIBS -= -lqt-mt
+		LIBS -= -lqt
+	}
 
 
 
