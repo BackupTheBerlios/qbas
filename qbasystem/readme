@@ -1,0 +1,636 @@
+
+              Qmake Building Automation System (QBASystem)
+		----------------------------
+		       version 0.9.7
+		----------------------------
+	This program is provided as it is. Use it at your own risk.
+		See LICENSE for the license agreements
+------------------------------------------------------------------------
+
+
+
+
+0)---->                    INDEX
+-------------------------------------------------------
+
+	0)- Index
+	1)- What's that?
+	2)- Requirements
+	3)- Usage
+	4)- Basic configuration : the block system
+	5)- More about configuration : project configuration
+	6)- Examples
+	7)- A quick tutorial
+	8)- More about QBASystem scripts
+	9)- Tricks and fine-tuning
+	10)- QBASystem environment variables
+	11)- Authors & agreements
+
+
+1)---->                 WHAT'S THAT?
+-------------------------------------------------------
+
+	QBASystem is a group of scripts which could make C++ Qt programmer's life
+easier... QBASystem scripts allow the developer to use qmake (the nice Trolltech's
+program distributed with the Qt library, licensed QPL and included in almost
+all GNU/Linux distributions) to build a program, check for dependencies,
+set build defines and create a Makefile without using the GNU tool jungle directly. 
+At the moment QBASystem is written for Qt code, but qmake allow standardization and 
+could therically work for every kind of program (detached from interface libs).
+	The powerful feature of QBASystem is requiring few knowledge to write a basic 
+build script: section 3/4 of this readme (with maybe some example and the tutorial)
+could be stisfactory to configure a little/medium project. However the advanced user
+too could be happy of QBASystem knowning it deeply.  
+
+
+2)---->                 REQUIREMENTS
+-------------------------------------------------------
+
+	The developer needs only a text editor. The user of your scripts
+need some packages. QBASystem will search for them (depending on your project settings)
+at the configure startup:
+
+o)- qmake (find it at http://www.trolltech.com, but if you have Qt you have
+    also qmake!);
+o)- ld linker (libtool);
+o)- pkgconfig, for advanced search;
+o)- Bash shell;
+o)- Qt CORRECTLY installed (this means QTDIR env variable must be properly set!);
+
+
+3)---->                    USAGE
+-------------------------------------------------------
+
+	To set QBASystem correctly for your code, you need only few steps:
+
+o)- You need a project file (.pro). You can generate it by QtDesigner
+    (this do not means you'll depend from Qt lib although!) or, if you know
+    the syntax, by yourself with a text editor (see at http://www.trolltech.com 
+    the "qmake User Guide" on the developers section);
+o)- Copy all what's in the "src" directory of this package in your
+    project source directory;
+o)- Add the line "include( main.qbas )" in your project file 
+    ("something.pro". Maybe the best place is the end of file.);
+o)- Configure the file "build.definition" to suit your needs (section
+    "Configuration" of this readme);
+
+All done! Your user will be able to do "./configure && make && make install"!
+Qmake will take care to build an "ad hoc" Makefile for the user.
+
+
+4)---->      BASIC CONFIGURATION : THE BLOCK SYSTEM
+-------------------------------------------------------
+
+	QBASystem has a simple block system: the main configuration script
+(file "build.definition") is a repetition of a basic block (BBLOCK). Each
+BBLOCK checks for a particular condition (depending from how BBLOCK is definited
+and what is definited) and acts in a different way depending from the check result.
+So QBASystem could check for a file existance or simply for a command execution
+and on success do something or not.
+	Marks used in comments that you should know are:
+
+(TOUCH!)  : means that the developers should modify this part;
+(DON'T TOUCH!) : this sub-block should be modified only if you know what you are
+            doing;
+
+Let we see a BBLOCK example:
+
+***********************************************************************
+***********************************************************************
+#   QT thread ---------------------------------------------------------
+OBJECT = lib/libqt-mt*
+TYPE = other
+DESCRIPTION = Qt library -mt
+TIP_MESSAGE = "Your QT system has been build without '-thread' option!"
+LINK_LIBS =
+EXEC =
+ADD_DEFINES =
+ADD_SOURCES =
+ADD_HEADERS =
+ADD_CONFIG = thread
+OPTIONS =     exit_on_failure     skip_link
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+***********************************************************************
+***********************************************************************
+
+Each BBLOCK is a particular object which QBASystem treats in a different way
+depending from TYPE field. The last part of the BBLOCK is the engine
+script inclusion and provides the working code. So it is easy to understand
+that a BBLOCK can run correctly with some fields unset but not without
+the "check.qbas" inclusion.
+
+Let we explain definition:
+
+
+
+
+" OBJECT " : this field CANNOT be undefined! It gives to QBASystem
+	engine the basical object to act with. It could be of various types
+	(see later);
+	
+" TYPE " : there are 5 types of objects: 
+		lib | bin | header | command | option | other .
+	Each one is treated in a different manner by the QBASystem script
+	engine (check.qbas):
+	0)-> lib : it usually has the conjunction of LINK_LIBS properly set 
+		and uses it to check for the OBJECT library existance in the user system. 
+		If all is ok, links what LINK_LIBS contains and do actions.
+	0)-> bin : search for the OBJECT binary existance.
+	0)-> header : search for the OBJECT header existance.
+	0)-> command : execute OBJECT in a detached shell:
+		if OBJECT exits with 1 then will link LINK_LIBS if the field is 
+		properly set and act properly;
+	0)-> option : add and/or execute the code lines of the BBLOCK
+		only if user configure with the option parameter;  
+	0)-> other : search for the OBJECT generic existance.
+	
+" CONFIG_HEADER_DEFINE " : it will define CONFIG_HEADER_DEFINE content in 
+	a 'config.h' file if 'enable_config_h' is set in global
+	PROJECT_SETTINGS. For example:
+		CONFIG_HEADER_DEFINE = HAVE_XLIB
+	will produce in 'config.h':
+		#define HAVE_XLIB	1
+		
+" DESCRIPTION " : this is the description which  will be showed (if
+	defined) in the stamp message. If not defined OBJECT will
+	be used to this scope;
+	
+" FEATURE " : if OBJECT provides a feature you should set it here with
+	its extended name ( i.e. "FEATURE = alsa").
+	Then the user could enable/disable it through the configure
+	script (only if the developer allows it). To set a feature
+	enabled/disabled by default you should add to the OPTIONS field
+	"enable_feature"/"disable_feature". If you wanna lock this
+	feature (so the user can't enable/disable it) you should add 
+	to the OPTIONS field also "lock_feature".
+	The user can modify (if unlocked) feature statement with:
+	./configure   --enable-FEATURE_NAME
+		or
+	./configure   --disable-FEATURE_NAME;
+	The same FEATURE field could be set on more than a block.
+
+" PACKAGE " : he user can set the path for PACKAGE with:
+	./configure   --with-PACKAGE=CUSTOM_DIR
+	Then the whole code will use the user defined path for
+	dependency checking and inclusion (if OBJECT is lib). If
+	user configures as said over, marked_static option will
+	be overrided. 
+	The same PACKAGE field could be set on more than a block.
+
+	
+" TIP_MESSAGE " : if the OBJECT action or action over OBJECT fails and 
+	TIP_MESSAGE is set, then it will be used as an user-friendly
+	message;
+	
+" LINK_LIBS " : used for the standard ld check and for linkage. LINK_LIBS 
+	must be a "ld" (libtool) compatible string: 
+	i.e. if OBJECT = libglib.so,  then LINK_LIBS = -lglib  
+	It is possible to set more than a lib on LINK_LIBS:
+	i.e LINK_LIBS = -logg -lvorbis ; 
+
+" EXECUTE " : if OBJECT has success, executes the script codelines filled
+	to this field. An example: "EXECUTE = echo Hello world!" will print
+	"Hello world!" if OBJECT exits with success. Code is executed by
+	qmake 'system' command in a detached shell; 
+	
+" ADD_DEFINES " : if OBJECT has success add this field as environment defines.
+	You could think at this field as the real substitute of the "config.h" 
+	system. An example: if in your sources you have "#ifdef HAVE_XY ...." 
+	and you add " ADD_DEFINES = HAVE_XY " the compiler will set HAVE_XY 
+	if OBJECT is ok;
+	
+" ADD_SOURCES " : if OBJECT has success add source files to the project;
+
+" ADD_HEADERS " : if OBJECT has success add header files to the project;
+
+" ADD_CONFIG " : if OBJECT has success add configs to qmake environment;
+
+" OPTIONS " : You could wanna modify the basic behaviour of QBASystem for
+	each BBLOCK instance. There are several options. Here's a list:
+	0)----- " exit_on_failure " : as it seems, exits on OBJECT failure;
+	0)----- " skip_link " : skip linking LINK_LIBS OBJECT on success;
+	0)----- " marked_static " : affect only 'lib' type. If STATIC_LIBPATH 
+	is set ( a way to set it is './configure --static-link=YOURPATH' ) 
+	QBASystem will link statically OBJECT from this path. If STATIC_LIBPATH is not
+	set, QBASystem will try to link OBJECT statically from default paths. On
+	failure shared linking is tryed;
+	0)----- " enable_feature " : if FEATURE is defined, set it to default enabled;
+	0)----- " disable_feature " : if FEATURE is defined, set it to default disabled;
+	0)----- " lock_feature " : if FEATURE is defined, lock it and do not allow
+	the user to change feature statement;
+	
+	
+	
+	
+NOTE: never forget that fields OBJECT and TYPE CANNOT be unset!!!!
+	
+NOTE2: it is possible to use jolly chars as '*'.
+
+So the example above searches for 'lib/libqt-mt*' ( showing the user something
+as "Checking for Qt library ....... XXX" ) and if all goes ok it adds
+the config parameter 'thread' to the project build. If it fails
+it exits with an error ( 'exit_on_failure' ).
+It doesn't link anything ( 'skip_link' ) and it's not
+marked static.
+If it fails, shows the user "QT system has been build without '-thread' option!".
+
+
+5)----> MORE ABOUT CONFIGURATION: PROJECT CONFIGURATION
+-------------------------------------------------------
+
+	There are several more things you could do in the "build.definition" 
+file. What you should know is explained in the section over but what you
+could know more about, is explained here. There are some fields you could
+add in your build-file which are not strictly needed for every project
+and can be skipped. All these fields have BBLOCK independence, so they
+don't need the "check.qbas" inclusion and they can be placed
+everywhere in the definition script (see examples). However a good rule is 
+to code them at the beginning of the file, to give a clean aspect to 
+your environment.
+	A full list is here:
+
+" PROJECT_FILE " : if you have only one project file in your source dir,
+	you could freely skip this field because QBASystem retrieves it by
+	itself. If indeed you have more than one project file, it is safe
+	to define which is the one QBASystem should build (actually is not
+	supported the build of more than one project at the same time!).
+	If you don't do it, QBASystem tryes with the first one listed by the 
+	"ls *.pro" bash command...
+	
+" QT_MINIMUM_REQUIRED_VERSION " : set it if you wanna be sure that the user
+	has a certain Qt version >= of QT_MINIMUM_REQUIRED_VERSION. This
+	field is an int number calculated so:
+		MAJOR_VERSION*10000 + MINOR_VERSION*100 + MICRO_VERSION
+	QT_MINIMUM_REQUIRED_VERSION is always a number of 6 digits (if not
+	add zeros from the left). 
+	Let's have an example. For Qt 3.2.3, this will be:
+		3*10000 + 2*100 + 3 = 030203
+	QT_MINIMUM_REQUIRED_VERSION requires QT_MINIMUM_REQUIRED_VERSION_STR
+	to be set. If not, the whole check will be ignored. 
+	
+" QT_MINIMUM_REQUIRED_VERSION_STR " : set it as a string representing the minimum
+	version needed. This field will be used in the friendly text output.
+	Let's have an example. For Qt 3.2.3 you should add the line:
+		QT_MINIMUM_REQUIRED_VERSION_STR = 3.2.3
+	QT_MINIMUM_REQUIRED_VERSION_STR requires QT_MINIMUM_REQUIRED_VERSION
+	to be set. If not, the whole check will be ignored.
+	
+" ERROR_TEMPLATE_MESSAGE " : this is the error template used by QBASystem. If the
+	field is unset, use default.
+	
+" CONFIGURE_SCRIPT_OPTIONS " : it is a good thing for a programmer to give some
+	more help to users. This field is a list of all project options that 
+	will be listed with "./configure --help". Skipping this field will
+	give no problems to QBASystem, but it would be worthy for a developer
+	to use it. 
+	**********************************************************************
+	WARNING!! Cause the engine uses character "-" as a delimiter we advice
+	not to use it in option/feature/package name! The result would be a
+	wrong configure behaviour!
+	**********************************************************************
+	
+" CONFIGURE_SCRIPT_FEATURES " : it is a good thing for a programmer to give some
+	more help to users. This field is a list of all project features that 
+	will be listed with "./configure --help". Skipping this field will
+	give no problems to QBASystem, but it would be worthy for a developer
+	to use it. 
+	**********************************************************************
+	WARNING!! Cause the engine uses character "-" as a delimiter we advice
+	not to use it in option/feature/package name! The result would be a
+	wrong configure behaviour!
+	**********************************************************************
+	
+" CONFIGURE_SCRIPT_PACKAGE_LIST " : it is a good thing for a programmer to give some
+	more help to users. This field is a list of all packages that 
+	could be customized and that they will be listed with "./configure --help". 
+	Skipping this field will give no problems to QBASystem, but it would 
+	be worthy for a developer to use it. 
+	**********************************************************************
+	WARNING!! Cause the engine uses character "-" as a delimiter we advice
+	not to use it in option/feature/package name! The result would be a
+	wrong configure behaviour!
+	**********************************************************************
+	
+" STATIC_TEMPLATE_MESSAGE " : this is the static template message used by QBASystem. 
+	If the field is unset, use default.
+	
+" SKIP_LINK_TEMPLATE_MESSAGE " : this is the template message for showing when
+	a link is skipped. If the field is unset, use default.
+	
+" PROJECT_SETTINGS " : QBASystem is capable to provide some optional features:
+	0)----- " enable_config_h " : autoheader compatibility. QBASystem will generate
+		a 'config.h' file that will be autoincluded in the project,
+		following the 'CONFIG_HEADER_DEFINE' directives of the developer
+		( see above ). QBASystem is capable of using a 'config.h.in' file as
+		code base to be than extended;
+	0)----- " no_qt " : removes all Qt checks for non-Qt projects ( an issue
+		is that libqt will be ALWAYS included... that's a Qt
+		specific problem. So actually this option will not work properly);
+	0)----- " enable_summary " : if FEATUREs are defined, this option will
+		enable a short user friendly summary at the end of the configure 
+		process.
+	
+
+
+6)---->                  EXAMPLES
+-------------------------------------------------------
+
+	In this package you'll find some examples in the "examples" dir. They are
+useful to understand QBASystem usage. Take a look at the "readme" file in each dir.
+
+
+7)---->              A QUICK TUTORIAL
+-------------------------------------------------------
+
+	Let's have a little QBASystem experience with a quick tutorial. For
+a full description of BBLOCK and project fields we advice you to read 
+sections 4 and 5 of this readme before.
+	Our project calls say_hello (see the full code in the examples directory).
+Copy and paste the whole stuff in the QBASystem "src" dir in our main project dir.
+The project file name is "say_hello.pro". This is the file containing
+source and header list for our project with other basical qmake directives. This
+file could be easily created using QtDesigner (simply create "new project" and
+add files from the file window) or alternatively using a text editor. The last 
+option require you to know more about qmake scripting syntax (pretty simple 
+although: you need only basic principles ... maybe 2/3 practice hours or less!).
+After the creation of our project file, we must add (best place at the end)
+the inclusion code for QBASystem scripts: so line
+
+include( main.qbas )
+
+added to say_hello.pro will do the work. From now we'll never touch say_hello.pro
+again but we'll use build.definition.
+	Let's start coding build.definition defining project file name and project
+options. We would like to have a config.h file set by QBASystem, modified by our base. So
+we place the file "config.h.in" coded with our define directives (see the file
+in "examples/say_hello/config.h.in") and set "enable_config_h" to the PROJECT_SETTINGS
+field. We add to this field also option "enable_summary", to enable a little printed
+summary of the configuration process. So build.definition now looks like:
+
+# Project file definition ---------------------------------------------
+PROJECT_FILE = say_hello.pro
+PROJECT_SETTINGS = enable_summary enable_config_h
+#----------------------------------------------------------------------
+	
+We need the "jack" option, to enable the jack code, and we would like
+to friendly print the configure parameter list when user asks for it. 
+So we add following codes to our build.definition:
+
+# Configure Help facilities -------------------------------------------
+CONFIGURE_SCRIPT_OPTIONS = check_execute
+CONFIGURE_SCRIPT_FEATURES = jack
+CONFIGURE_SCRIPT_PACKAGE_LIST = jack
+#----------------------------------------------------------------------
+
+We could add more description to our options with this code:
+
+# Option help descriptions --------------------------------------------
+check_execute_HELP_DESCRIPTION = testing the QBASystem execute field
+#----------------------------------------------------------------------
+
+Suffix _HELP_DESCRIPTION with the option name is used to provide a 
+field with a full description which will be showed with 
+"./configure --help". Feature and packages configure parameters
+have usually an obvious description, so have not a similar
+procedure.
+The other step to fine tune our build is checking for the right Qt
+version. Code is:
+
+# Qt Version definition -----------------------------------------------
+QT_MINIMUM_REQUIRED_VERSION = 030201
+QT_MINIMUM_REQUIRED_VERSION_STR = 3.2.1
+#----------------------------------------------------------------------
+
+We code the BBLOCK related to "check_execute" option. This option
+in our intentions only checks, if enabled, for the correctly execution 
+of the QBASystem engine. So the first BBLOCK code is:
+
+#   check_execute -----------------------------------------------------
+OBJECT = check_execute
+TYPE = option
+DESCRIPTION = test QBASystem execution
+EXECUTE = echo 'Check test is ok!'
+OPTIONS =
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+We could also check for the GNU compiler binary presence in the host
+system. BBLOCKs code is out here:
+
+#   GCC ---------------------------------------------------------------
+OBJECT = gcc
+TYPE = bin
+DESCRIPTION = Gcc compiler
+TIP_MESSAGE = "No gcc compiler!"
+ADD_DEFINES = HAVE_GCC
+CONFIG_HEADER_DEFINE = HAVE_GCC
+OPTIONS =
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+#   G++ ---------------------------------------------------------------
+OBJECT = g++
+TYPE = bin
+DESCRIPTION = G++ compiler
+TIP_MESSAGE = "No g++ compiler!"
+ADD_DEFINES = HAVE_GPP
+CONFIG_HEADER_DEFINE = HAVE_GPP
+OPTIONS =
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+These blocks add to the config.h file definitions of HAVE_GCC and HAVE_GPP
+if BBLOCKs have success. They add also compiler flags -DHAVE_GCC and 
+-DHAVE_GPP. If not TIP_MESSAGE is printed with an error message.
+A little demo of how easy is using the qmake script language in
+build .definition:
+
+contains( DEFINES, HAVE_GPP ) {
+	# this will print a Project Message
+	message( "Condition "have g++" ok!" )
+}
+
+With the same structure we could set a check brach (useful for an advanced 
+use of QBASystem):
+
+# BBLOCKs can also be included in conditions.
+# You can do conditional checks so:
+contains( DEFINES, HAVE_GCC ) {
+
+
+
+	#   STD LIB -----------------------------------------------------------
+	OBJECT = stdlib.h
+	TYPE = header
+	DESCRIPTION = Std lib header
+	TIP_MESSAGE = "No Std lib header but gcc is present!"
+	LINK_LIBS =
+	OPTIONS = exit_on_failure
+	#----------------------------------------------------------------------
+	# Check routines         (DON'T TOUCH!)
+	include( check.qbas )
+	#----------------------------------------------------------------------
+	
+}
+
+The branched BBLOCK checks for the "stdlib.h" header existance and exits on
+failure.
+Now we check for an advanced tool: pkg-config. It allows to retrieve useful
+informations for some packages:
+
+# Pay attention: if TIP_MESSAGE is unset 
+# no tip message is printed...
+#   PKG-CONFIG --------------------------------------------------------
+OBJECT = pkg-config
+TYPE = bin
+DESCRIPTION =
+TIP_MESSAGE = "No pkg-config found!"
+ADD_DEFINES = HAVE_PKG_CONFIG
+OPTIONS = exit_on_failure
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+We check for glib 2.0 existance, cause probably a sub-dependance could give some
+problem. We do not need to link glib although. This check require pkg-config
+so the previous block has option exit_on_failure. Code is:
+
+#   GLIB 2.0 ----------------------------------------------------------
+OBJECT = pkg-config --exists 'glib-2.0'
+TYPE = command 
+DESCRIPTION = GNU library (Glib) 2.0
+LINK_LIBS = -lglib
+OPTIONS =    skip_link
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+As you see, we use a command type to do the work.
+Finally check for Jack existance and link it if found. We allow to
+build also without Jack, so Jack code is a feature (disabled by default). 
+We allow user to define a new path for Jack lib and headers defining 
+PACKAGE field. Code is:
+
+#   JACK HEADERS ------------------------------------------------------
+OBJECT = jack/jack.h
+TYPE = header
+DESCRIPTION = Jack headers
+TIP_MESSAGE = "Jack headers needed to compile with Jack support!"
+PACKAGE = jack
+LINK_LIBS =
+OPTIONS =
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+#   JACK --------------------------------------------------------------
+OBJECT = pkg-config --exists 'jack >= 0.61.0'
+TYPE = command
+DESCRIPTION = Jack >= 0.61.0
+FEATURE = jack
+PACKAGE = jack
+TIP_MESSAGE = "Jack not found!"
+LINK_LIBS = `pkg-config --silence-errors --cflags --libs jack`
+ADD_DEFINES = __JACK__
+OPTIONS =     disable_feature
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+We use, another time, pkg-config to test Jack presence and to link 
+correctly. Done! We are ready to build with "./configure && make".
+To install you should look the qmake reference, which allows to define
+in the file project installation paths.
+See the full example code in the examples/say_hello directory of the
+QBASystem package.
+
+
+8)---->          MORE ABOUT QBASYSTEM SCRIPTS
+-------------------------------------------------------
+
+	What you need to configure is only the file "build.definition", as said above. 
+However, you maybe would like to know more about other QBASystem scripts :
+
+o)- "check.qbas" : it is the QBASystem engine, where all the operations of linking,
+                   checking and other take place;
+o)- "paths.qbas" : here are defined all search paths, the stamp header, the
+                   platform. You could also modify paths if you need it for
+		   particular purpouses, but it is not suggested;
+o)- "main.qbas"  : the main script, where all subscripts are included.
+                   The footer is here;
+o)- "configure"  : it is a bash script. It checks for a sane environment, parses
+                   line options, checks if Qt is ok and then runs qmake;
+o)- "help"       : it is not a script but only the help message stamped by
+                   "./configure --help" or similar;
+o)- "build.definition" : as said over, it is the developer defined script;
+
+
+9)---->           TRICKS AND FINE-TUNING
+-------------------------------------------------------
+
+	You should rememeber that you could use the standard qmake script syntax
+in every part of your "build.definition". QBASystem is "de facto" an extension
+of the qmake environment, targeted to dependencies and build tricks.
+So you could do conditions, "syscalls"and other. A good place where to extend
+your horizons is http://www.trolltech.com, reading the "qmake User Guide" to 
+learn more about qmake scriptinglanguage (see also examples).
+
+
+10)---->     QBASYSTEM ENVIRONMENT VARIABLES
+-------------------------------------------------------
+
+	If you are an advanced user or you need particolar build tricks, you could
+need to know what vars QBASystem uses and defines internally. All this fields 
+can be used with the qmake scripting language in build.definition. 
+In all cases is ABSOLUTELY NOT SAFE TO MODIFY THEM DIRECTLY. Consider them 
+"read-only" for the safe QBASystem execution. 
+That's the reason for presenting them here:
+
+" PROJECT_PATH " : that's usually the project file location. Better to say that 
+	this field represents the location where configure script is executed.
+	An issue is that if configure script is executed from another path
+	than the project path, execution will be broken.
+
+" CUSTOM_BUILD " : it contains a value "true" or "false" depending if the user
+	configured with options.
+
+" ENABLED_FEATURES " : contains a list of the enabled features.
+
+" DISABLED_FEATURES " : contains a list of the disabled features.
+
+" USER_DEFINED_PACKAGES " : contains a list of all packages configured by
+	the user ( i.e. using "./configure --with-PACKAGE" ).
+
+" package_PATH " : contains the custom path for package "package". "package"
+	should be listed also in USER_DEFINED_PACKAGES to be considered as
+	path-user-defined.
+
+" PROJECT_ACTIVE_OPTIONS " : contains the list of active options (options listed
+	while user configured).
+
+
+11)---->             AUTHORS & AGREEMENTS
+-------------------------------------------------------
+
+	Be careful to know the license statement of this program (GPL version 2).
+Read the file "license" distributed with this package or visit http://www.gnu.org
+for more informations.
+
+This code is provided by:
+
+0)- Gianluca Romanin (aka J_Zar), (j_zar_AT_users.berlios.de):
+    the main developer and maintainer.
+

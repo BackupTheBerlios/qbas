@@ -1,0 +1,135 @@
+ 
+
+
+		----->>>   CHANGELOG   <<<-----
+		
+		
+Version 0.9.7-----------------------------------
+-------------------------------------------------
+( 12-08-2004 )
+
+0)*  Project name acronym is changed to QBASystem, cause I noticed some
+     commercial stuff named QBAS;
+
+0)+  Changed temp files names in configure script. System is more modular;
+     
+0)*  Major change at the configure help option facilities. A new method 
+     to output help message has been coded in configure script;
+
+0)+  Readme change and improvement;
+
+0)+  Added EXECUTE var to execute script code if OBJECT is ok;
+
+0)+  Added possibility for option description at the configure help;
+
+
+
+Version 0.9.6-----------------------------------
+-------------------------------------------------
+( 04-07-2004 )
+
+0)+  Changes in the linkage scheme thanks to Peter Chang suggestions.
+     Now "marked_static" option tryes the static linkage also on
+     default paths before trying with shared. Added code to check
+     lib existance if marked_static is set;
+     
+0)+  Changed option "--static-linking-path" in "--static-link" in configure 
+     script. Not defining a path on this option will automatically define
+     STATIC_LIBPATH = 1 in configure.def to make work the proper code
+     for static linkage. Code of lib existance needs a speed-up although;
+
+0)-  Corrected bug on output message thanks to Peter Chang;
+
+0)-  Corrected bug on lib existance code ( wrong branch );
+
+
+
+
+Version 0.9.5-----------------------------------
+-------------------------------------------------
+( 26-06-2004 )
+
+0)-  Changed the "--includedir" option with "--dependency-dir"
+     in configure script to avoid confusing with autoconf parameters;
+     
+0)+  Added option "--disable-warnings" in configure script;
+
+0)+  Added PACKAGE feature: allow user to set custom paths
+     for dependency checking and inclusion on PACKAGE;
+
+0)-  Corrected bug on linkage;
+
+0)+  Empowered linkage code and friendly output; 
+     
+     
+     
+     
+Version 0.9.4 -----------------------------------
+-------------------------------------------------
+( 28-05-2004 )
+
+0)-  Fixed a little output bug in 'check.qbas': when a certain
+     FEATURE was defined more than one time, summary reported 
+     more time the same line;
+     
+0)+  More code to "configure" script: help messages will show
+     custom options now;
+     
+    
+
+
+Version 0.9.3 -----------------------------------
+-------------------------------------------------
+( 18-04-2004 )
+
+0)+  QBAS can create a 'config.h' file following directives 
+     in build.definition and using 'config.h.in' as code base;
+     
+0)+  PROJECT_SETTINGS can handle option 'no_qt': support for 
+     projects which not use Qt libs ( not working completely
+     although ;-( );
+
+
+
+
+Version 0.9.2 -----------------------------------
+-------------------------------------------------
+( 13-04-2004 )
+
+0)+ Overwrite default values QMAKE_CXXFLAGS / QMAKE_CFLAGS / QMAKE_LFLAGS 
+    if defined by user;
+
+0)+ Added 'release' in CONFIG if debug is not set;
+
+0)+ Made visible when skipping linkage;
+
+0)+ Enabling features has become similar to what GNU tools do:
+    --enable-FEATURE --disable-FEATURE;
+    
+0)+ Modified the output message code. Added possibility to use templates
+    for friendly output messages; 
+
+
+
+
+Version 0.9.1 -----------------------------------
+-------------------------------------------------
+( 29-03-2004 )
+
+0)+ Added code to provide enable/disable of code blocks;
+
+0)+ Added code to provide an user friendly resume summary
+    output;
+    
+0)- Fixed bug about the QTDIR check;
+
+0)+ Added code to be more detached from environment variables;
+
+  
+
+
+Version 0.9.0 -----------------------------------
+-------------------------------------------------
+( 29-02-2004 )
+
+First public release;

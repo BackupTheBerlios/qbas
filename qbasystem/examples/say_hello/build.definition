@@ -1,0 +1,162 @@
+
+# Project file definition ---------------------------------------------
+PROJECT_FILE = say_hello.pro
+PROJECT_SETTINGS = enable_summary enable_config_h
+#----------------------------------------------------------------------
+
+
+# Configure Help facilities -------------------------------------------
+CONFIGURE_SCRIPT_OPTIONS = check_execute
+CONFIGURE_SCRIPT_FEATURES = jack
+CONFIGURE_SCRIPT_PACKAGE_LIST = jack
+#----------------------------------------------------------------------
+
+
+# Option help descriptions --------------------------------------------
+check_execute_HELP_DESCRIPTION = testing the QBASystem execute field
+#----------------------------------------------------------------------
+
+
+# Qt Version definition -----------------------------------------------
+QT_MINIMUM_REQUIRED_VERSION = 030201
+QT_MINIMUM_REQUIRED_VERSION_STR = 3.2.1
+#----------------------------------------------------------------------
+
+
+
+
+#   check_execute -----------------------------------------------------
+OBJECT = check_execute
+TYPE = option
+DESCRIPTION = test QBASys execution
+EXECUTE = echo 'Check test is ok!'
+OPTIONS =
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+
+
+
+#   GCC ---------------------------------------------------------------
+OBJECT = gcc
+TYPE = bin
+DESCRIPTION = Gcc compiler
+TIP_MESSAGE = "No gcc compiler!"
+ADD_DEFINES = HAVE_GCC
+CONFIG_HEADER_DEFINE = HAVE_GCC
+OPTIONS =
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+
+
+
+#   G++ ---------------------------------------------------------------
+OBJECT = g++
+TYPE = bin
+DESCRIPTION = G++ compiler
+TIP_MESSAGE = "No g++ compiler!"
+ADD_DEFINES = HAVE_GPP
+CONFIG_HEADER_DEFINE = HAVE_GPP
+OPTIONS =
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+contains( DEFINES, HAVE_GPP ) {
+	# this will print a Project Message
+	message( "Condition "have g++" ok!" )
+}
+
+
+
+# BBLOCKs can also be included in conditions.
+# You can do conditional checks so:
+contains( DEFINES, HAVE_GCC ) {
+
+
+
+	#   STD LIB -----------------------------------------------------------
+	OBJECT = stdlib.h
+	TYPE = header
+	DESCRIPTION = Std lib header
+	TIP_MESSAGE = "No Std lib header but gcc is present!"
+	LINK_LIBS =
+	OPTIONS = exit_on_failure
+	#----------------------------------------------------------------------
+	# Check routines         (DON'T TOUCH!)
+	include( check.qbas )
+	#----------------------------------------------------------------------
+	
+}
+
+
+# Pay attention: if TIP_MESSAGE is unset 
+# no tip message is printed...
+#   PKG-CONFIG --------------------------------------------------------
+OBJECT = pkg-config
+TYPE = bin
+DESCRIPTION =
+TIP_MESSAGE = "No pkg-config found!"
+ADD_DEFINES = HAVE_PKG_CONFIG
+OPTIONS = exit_on_failure
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+
+#   GLIB 2.0 ----------------------------------------------------------
+OBJECT = pkg-config --exists 'glib-2.0'
+TYPE = command 
+DESCRIPTION = GNU library (Glib) 2.0
+LINK_LIBS = -lglib
+OPTIONS =    skip_link
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+
+
+
+#   JACK HEADERS ------------------------------------------------------
+OBJECT = jack/jack.h
+TYPE = header
+DESCRIPTION = Jack headers
+TIP_MESSAGE = "Jack headers needed to compile with Jack support!"
+PACKAGE = jack
+LINK_LIBS =
+OPTIONS =
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------
+
+
+
+
+#   JACK --------------------------------------------------------------
+OBJECT = pkg-config --exists 'jack >= 0.61.0'
+TYPE = command
+DESCRIPTION = Jack >= 0.61.0
+FEATURE = jack
+PACKAGE = jack
+TIP_MESSAGE = "Jack not found!"
+LINK_LIBS = `pkg-config --silence-errors --cflags --libs jack`
+ADD_DEFINES = __JACK__
+OPTIONS =     disable_feature
+#----------------------------------------------------------------------
+# Check routines         (DON'T TOUCH!)
+include( check.qbas )
+#----------------------------------------------------------------------

@@ -1,0 +1,9 @@
+This is an example on how to use the autoheader system in QBAS. Here
+we try to compile all the IzSound library (http://www.izforge.com) 
+using the QBAS system. File "config.h.in" is not treated as in the 
+Autoheader tool (from GNU tools), but as a base for config.h. All
+the code contained in "config.h.in" is copied in "config.h" and added
+with what defined in "build.definition".
+
+To enable "config.h" creation you need to set 'enable_config_h' in
+PROJECT_SETTINGS.
